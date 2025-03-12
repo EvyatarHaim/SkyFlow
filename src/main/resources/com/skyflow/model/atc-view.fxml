@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.skyflow.ATCController"
+            prefHeight="600.0" prefWidth="900.0">
+
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Airport Traffic Control System" style="-fx-font-size: 20; -fx-font-weight: bold"/>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="weatherLabel" text="Weather: Wind 0 km/h at 0° | Visibility: 0 m"
+                       style="-fx-font-weight: bold"/>
+            </HBox>
+
+            <Separator/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="0" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Flight Schedule" style="-fx-font-weight: bold"/>
+
+            <TableView fx:id="flightTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="flightIdColumn" text="Flight ID" prefWidth="100"/>
+                    <TableColumn fx:id="aircraftTypeColumn" text="Aircraft Type" prefWidth="100"/>
+                    <TableColumn fx:id="scheduledTimeColumn" text="Scheduled Time" prefWidth="150"/>
+                    <TableColumn fx:id="actualTimeColumn" text="Actual Time" prefWidth="150"/>
+                    <TableColumn fx:id="runwayColumn" text="Runway" prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+    <right>
+        <VBox spacing="10" prefWidth="250">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <TitledPane text="Add Flight" expanded="true">
+                <VBox spacing="10">
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Flight ID:" prefWidth="100"/>
+                        <TextField fx:id="flightIdField" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Aircraft Type:" prefWidth="100"/>
+                        <TextField fx:id="aircraftTypeField" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Category:" prefWidth="100"/>
+                        <TextField fx:id="categoryField" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Destination:" prefWidth="100"/>
+                        <TextField fx:id="destinationField" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_RIGHT">
+                        <Button fx:id="addFlightButton" text="Add Flight" onAction="#handleAddFlight"/>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+
+            <TitledPane text="Weather Update" expanded="true">
+                <VBox spacing="10">
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Wind Speed:" prefWidth="100"/>
+                        <TextField fx:id="windSpeedField" promptText="km/h" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Wind Direction:" prefWidth="100"/>
+                        <TextField fx:id="windDirectionField" promptText="degrees" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_LEFT">
+                        <Label text="Visibility:" prefWidth="100"/>
+                        <TextField fx:id="visibilityField" promptText="meters" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+
+                    <HBox spacing="5" alignment="CENTER_RIGHT">
+                        <Button fx:id="updateWeatherButton" text="Update Weather" onAction="#handleUpdateWeather"/>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+
+            <Button fx:id="scheduleButton" text="Run Scheduling" maxWidth="Infinity"
+                    onAction="#handleScheduleFlights" style="-fx-font-weight: bold"/>
+        </VBox>
+    </right>
+
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+            <Label text="Evyatar Haim"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
