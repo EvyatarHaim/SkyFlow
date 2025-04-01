@@ -1,7 +1,7 @@
 package com.skyflow.model;
 
 public class Weather {
-    private double windSpeed; // In knots
+    private double windSpeed; // In km/h
     private int windDirection; // In degrees (0-360)
     private double visibility; // In kilometers
     private WeatherCondition condition;
@@ -131,7 +131,7 @@ public class Weather {
     @Override
     public String toString() {
         return "Weather{" +
-                "wind=" + windSpeed + " knots at " + windDirection + "°" +
+                "wind=" + windSpeed + " km/h at " + windDirection + "°" +
                 ", visibility=" + visibility + " km" +
                 ", condition=" + condition +
                 '}';

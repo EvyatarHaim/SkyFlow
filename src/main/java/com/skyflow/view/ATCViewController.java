@@ -175,7 +175,7 @@ public class ATCViewController implements Initializable {
         // Update weather display
         Weather weather = weatherController.getCurrentWeather();
         lblWeatherStatus.setText(String.format(
-                "Wind: %.1f knots at %d° - Visibility: %.1f km - Condition: %s",
+                "Wind: %.1f km/h at %d° - Visibility: %.1f km - Condition: %s",
                 weather.getWindSpeed(), weather.getWindDirection(),
                 weather.getVisibility(), weather.getCondition().name()));
 
