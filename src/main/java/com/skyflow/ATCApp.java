@@ -7,12 +7,22 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.net.URL;
+
 public class ATCApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // Load the FXML for the main view
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/atc-view.fxml"));
+        // Use getResource to load the FXML file correctly
+        URL fxmlUrl = getClass().getResource("/com/skyflow/view/atc-view.fxml");
+
+        // Check if the FXML file is found
+        if (fxmlUrl == null) {
+            throw new RuntimeException("Cannot find atc-view.fxml");
+        }
+
+        // Load the FXML
+        FXMLLoader loader = new FXMLLoader(fxmlUrl);
         Parent root = loader.load();
 
         // Set up the scene

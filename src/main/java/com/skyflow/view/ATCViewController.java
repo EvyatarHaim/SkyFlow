@@ -1,4 +1,3 @@
-// Controller for the main ATC view
 package com.skyflow.view;
 
 import com.skyflow.controller.*;
@@ -19,6 +18,7 @@ import javafx.util.Duration;
 
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -203,7 +203,7 @@ public class ATCViewController implements Initializable {
         Platform.runLater(this::refreshData);
     }
 
-    // Add new flight button handler
+    // Add a new flight to the system
     @FXML
     private void handleAddFlight() {
         try {
@@ -212,6 +212,7 @@ public class ATCViewController implements Initializable {
             String airline = txtAirline.getText().trim();
             String aircraft = txtAircraft.getText().trim();
 
+            // Check for empty fields
             if (flightNumber.isEmpty() || airline.isEmpty() || aircraft.isEmpty() ||
                     dpScheduledDate.getValue() == null || txtScheduledTime.getText().trim().isEmpty()) {
                 showAlert("Missing Data", "Please fill in all required fields.");
@@ -224,7 +225,7 @@ public class ATCViewController implements Initializable {
                 String timeStr = txtScheduledTime.getText().trim();
                 scheduledTime = LocalDateTime.of(
                         dpScheduledDate.getValue(),
-                        java.time.LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"))
+                        LocalTime.parse(timeStr, DateTimeFormatter.ofPattern("HH:mm"))
                 );
             } catch (Exception e) {
                 showAlert("Invalid Time", "Please enter time in format HH:MM (e.g., 14:30).");
@@ -233,7 +234,9 @@ public class ATCViewController implements Initializable {
 
             // Create new flight
             Flight flight = flightController.createFlight(
-                    flightNumber, airline, aircraft,
+                    flightNumber,
+                    airline,
+                    aircraft,
                     cboCategory.getValue(),
                     cboFlightType.getValue(),
                     scheduledTime,
@@ -249,14 +252,15 @@ public class ATCViewController implements Initializable {
             // Clear form
             clearFlightForm();
 
-            // Refresh data
-            refreshData();
-
             // Show success message
             lblStatus.setText("Flight " + flightNumber + " added successfully.");
+
         } catch (Exception e) {
-            showAlert("Error", "Failed to add flight: " + e.getMessage());
+            // Log the error
             e.printStackTrace();
+
+            // Show error alert
+            showAlert("Error", "Failed to add flight: " + e.getMessage());
         }
     }
 
@@ -536,5 +540,83 @@ public class ATCViewController implements Initializable {
     // Get singleton instance
     public static ATCViewController getInstance() {
         return instance;
+    }
+
+
+    @FXML
+    private void handleGenerateFlights() {
+        try {
+            // Generate flights
+            List<Flight> generatedFlights = flightController.generateTestFlights();
+
+            // Optional: You might want to add a limit to prevent overwhelming the system
+            int maxFlights = 40;
+            int addedFlights = 0;
+
+            for (Flight flight : generatedFlights) {
+                if (addedFlights >= maxFlights) {
+                    break;
+                }
+
+                // Add each generated flight to the system
+                flightController.createFlight(
+                        flight.getFlightNumber(),
+                        flight.getAirline(),
+                        flight.getAircraft(),
+                        flight.getCategory(),
+                        flight.getType(),
+                        flight.getScheduledTime(),
+                        flight.getEmergencyStatus()
+                );
+
+                addedFlights++;
+            }
+
+            // Refresh data
+            refreshData();
+
+            // Show success message
+            lblStatus.setText("Generated " + addedFlights + " test flights successfully.");
+        } catch (Exception e) {
+            showAlert("Error", "Failed to generate flights: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Generate runways button handler
+    @FXML
+    private void handleGenerateRunways() {
+        try {
+            // Generate runways
+            List<Runway> generatedRunways = runwayController.generateTestRunways();
+
+            // Optional: You might want to add a limit to prevent overwhelming the system
+            int maxRunways = 10;
+            int addedRunways = 0;
+
+            for (Runway runway : generatedRunways) {
+                if (addedRunways >= maxRunways) {
+                    break;
+                }
+
+                // Add each generated runway to the system
+                runwayController.createRunway(
+                        runway.getId(),
+                        runway.getHeading(),
+                        runway.getLength()
+                );
+
+                addedRunways++;
+            }
+
+            // Refresh data
+            refreshData();
+
+            // Show success message
+            lblStatus.setText("Generated " + addedRunways + " test runways successfully.");
+        } catch (Exception e) {
+            showAlert("Error", "Failed to generate runways: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

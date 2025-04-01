@@ -91,6 +91,9 @@
                             <Separator/>
 
                             <Button text="Set Emergency" onAction="#handleSetEmergency" prefWidth="200"/>
+                            <Button text="Generate Flights" onAction="#handleGenerateFlights" prefWidth="200"/>
+
+
                         </VBox>
                     </right>
                 </BorderPane>
@@ -141,6 +144,8 @@
                             <Separator/>
 
                             <Button text="Toggle Active/Inactive" onAction="#handleToggleRunwayActive" prefWidth="200"/>
+                            <Button text="Generate Runways" onAction="#handleGenerateRunways" prefWidth="200"/>
+
                         </VBox>
                     </right>
                 </BorderPane>

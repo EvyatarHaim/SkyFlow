@@ -6,6 +6,8 @@ import com.skyflow.util.DatabaseController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 public class RunwayController {
     private List<Runway> runways;
@@ -25,8 +27,39 @@ public class RunwayController {
         }
     }
 
-    // Create a new runway
+    // Generate a set of test runways for system validation
+    public List<Runway> generateTestRunways() {
+        List<Runway> testRunways = new ArrayList<>();
+        Random random = new Random();
+
+        // Create a mix of different runway characteristics
+        Runway[] runwayData = {
+                // Main runways with different configurations
+                createRunway("01L", 10, 3800),  // Long runway for heavy aircraft
+                createRunway("01R", 10, 3500),  // Slightly shorter main runway
+
+                // Secondary runways
+                createRunway("16L", 160, 2800),  // Medium-length runway
+                createRunway("16R", 160, 2600),  // Shorter secondary runway
+
+                // Auxiliary runways
+                createRunway("09", 90, 2200),   // Shorter auxiliary runway
+                createRunway("27", 270, 2400)   // Another auxiliary runway
+        };
+
+        // Randomly set some runways to inactive
+        for (Runway runway : runwayData) {
+            // 20% chance of being inactive
+            runway.setActive(random.nextDouble() < 0.8);
+            testRunways.add(runway);
+        }
+
+        return testRunways;
+    }
+
+    // Create a new runway and add it to the system
     public Runway createRunway(String id, int heading, int length) {
+        // Create new runway
         Runway runway = new Runway(id, heading, length);
 
         // Add to local list
