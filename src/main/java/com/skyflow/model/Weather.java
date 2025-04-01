@@ -1,18 +1,99 @@
 package com.skyflow.model;
 
 public class Weather {
-    private double windSpeed;       // in km/h
-    private int windDirection;      // in degrees
-    private double visibility;      // in meters
-    private boolean precipitation;
-    private String precipitationType; // rain, snow
+    private double windSpeed; // In knots
+    private int windDirection; // In degrees (0-360)
+    private double visibility; // In kilometers
+    private WeatherCondition condition;
+
+    // Enum for different weather conditions
+    public enum WeatherCondition {
+        SUNNY,
+        CLOUDY,
+        RAINY,
+        SNOWY,
+        FOGGY,
+        THUNDERSTORM
+    }
 
     // Constructor
-    public Weather(double windSpeed, int windDirection, double visibility) {
+    public Weather(double windSpeed, int windDirection, double visibility, WeatherCondition condition) {
         this.windSpeed = windSpeed;
         this.windDirection = windDirection;
         this.visibility = visibility;
-        this.precipitation = false;
+        this.condition = condition;
+    }
+
+    // Calculate headwind component for a given runway heading
+    public double calculateHeadwind(int runwayHeading) {
+        // Convert runway heading to radians
+        double runwayRadians = Math.toRadians(runwayHeading);
+
+        // Calculate the angle between wind direction and runway heading
+        // Wind direction is where the wind is coming FROM
+        double windRadians = Math.toRadians((windDirection + 180) % 360);
+
+        // Calculate the component of wind along the runway
+        return windSpeed * Math.cos(windRadians - runwayRadians);
+    }
+
+    // Calculate crosswind component for a given runway heading
+    public double calculateCrosswind(int runwayHeading) {
+        // Convert runway heading to radians
+        double runwayRadians = Math.toRadians(runwayHeading);
+
+        // Calculate the angle between wind direction and runway heading
+        // Wind direction is where the wind is coming FROM
+        double windRadians = Math.toRadians((windDirection + 180) % 360);
+
+        // Calculate the component of wind perpendicular to the runway
+        return windSpeed * Math.sin(windRadians - runwayRadians);
+    }
+
+    // Get a weather factor that affects separation times
+    public double getWeatherFactor() {
+        double factor = 1.0;
+
+        // Adjust for visibility
+        if (visibility < 1.0) {
+            factor *= 2.0; // Severe visibility issues
+        } else if (visibility < 3.0) {
+            factor *= 1.5; // Moderate visibility issues
+        } else if (visibility < 5.0) {
+            factor *= 1.2; // Slight visibility issues
+        }
+
+        // Adjust for wind speed
+        if (windSpeed > 30) {
+            factor *= 1.5; // Strong winds
+        } else if (windSpeed > 20) {
+            factor *= 1.3; // Moderate winds
+        } else if (windSpeed > 10) {
+            factor *= 1.1; // Light winds
+        }
+
+        // Adjust for weather condition
+        switch (condition) {
+            case SUNNY:
+                break;
+            case CLOUDY:
+                factor *= 1.1;
+                break;
+            case RAINY:
+                factor *= 1.3;
+                break;
+            case SNOWY:
+                factor *= 1.8;
+                break;
+            case FOGGY:
+                factor *= 1.6;
+                break;
+            case THUNDERSTORM:
+                factor *= 2.0;
+                break;
+        }
+
+        return factor;
     }
 
     public double getWindSpeed() {
@@ -39,49 +120,20 @@ public class Weather {
         this.visibility = visibility;
     }
 
-    public boolean isPrecipitation() {
-        return precipitation;
+    public WeatherCondition getCondition() {
+        return condition;
     }
 
-    public void setPrecipitation(boolean precipitation) {
-        this.precipitation = precipitation;
+    public void setCondition(WeatherCondition condition) {
+        this.condition = condition;
     }
 
-    public String getPrecipitationType() {
-        return precipitationType;
+    @Override
+    public String toString() {
+        return "Weather{" +
+                "wind=" + windSpeed + " knots at " + windDirection + "°" +
+                ", visibility=" + visibility + " km" +
+                ", condition=" + condition +
+                '}';
     }
-
-    public void setPrecipitationType(String precipitationType) {
-        this.precipitationType = precipitationType;
-        if (precipitationType != null && !precipitationType.isEmpty()) {
-            this.precipitation = true;
-        }
-    }
-
-    // Calculate the crosswind 
-    public double calcCrosswind(int runwayHeading) {
-        // Calculate the angle between wind direction and runway heading
-        int angle = Math.abs(windDirection - runwayHeading);
-        if (angle > 180) {
-            angle = 360 - angle;
-        }
-
-        // Calculate the crosswind component using the sin of the angle
-        return windSpeed * Math.sin(Math.toRadians(angle));
-    }
-
-    // Calculate the headwind
-    public double calcHeadwind(int runwayHeading) {
-        // Calculate the angle between wind direction and runway heading
-        int angle = Math.abs(windDirection - runwayHeading);
-        if (angle > 180) {
-            angle = 360 - angle;
-        }
-
-        // Calculate the headwind component using the cos of the angle
-        return windSpeed * Math.cos(Math.toRadians(angle));
-    }
-
-
-
 }
