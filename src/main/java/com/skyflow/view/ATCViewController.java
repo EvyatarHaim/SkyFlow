@@ -168,6 +168,21 @@ public class ATCViewController implements Initializable {
         flightsData.clear();
         flightsData.addAll(flightController.getAllFlights());
 
+        // Sort flights by actual time, with latest at the bottom
+        flightsData.sort((flight1, flight2) -> {
+            // Handle null actual times (unscheduled flights)
+            if (flight1.getActualTime() == null && flight2.getActualTime() == null) {
+                return 0; // Both unscheduled, keep original order
+            } else if (flight1.getActualTime() == null) {
+                return -1; // Unscheduled flights come first
+            } else if (flight2.getActualTime() == null) {
+                return 1; // Unscheduled flights come first
+            } else {
+                // Both have actual times, compare them
+                return flight1.getActualTime().compareTo(flight2.getActualTime());
+            }
+        });
+
         // Update runways table
         runwaysData.clear();
         runwaysData.addAll(runwayController.getAllRunways());
@@ -186,18 +201,16 @@ public class ATCViewController implements Initializable {
         cboWeatherCondition.setValue(weather.getCondition());
     }
 
-    // Update simulation (called every second)
+    // Update simulation
     private void updateSimulation() {
         // Update current time display
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         lblCurrentTime.setText("Current Time: " + LocalDateTime.now().format(timeFormatter));
 
-        // Run scheduling algorithm
         List<Flight> scheduled = schedulingController.scheduleFlights();
 
-        // Update status
-        lblStatus.setText("Last Update: " + LocalDateTime.now().format(timeFormatter) +
-                " - Flights Scheduled: " + scheduled.size());
+        // Update status without mentioning scheduled flights
+        // lblStatus.setText("Last Update: " + LocalDateTime.now().format(timeFormatter));
 
         // Refresh data
         Platform.runLater(this::refreshData);
@@ -541,82 +554,5 @@ public class ATCViewController implements Initializable {
     public static ATCViewController getInstance() {
         return instance;
     }
-
-
-    @FXML
-    private void handleGenerateFlights() {
-        try {
-            // Generate flights
-            List<Flight> generatedFlights = flightController.generateTestFlights();
-
-            // Optional: You might want to add a limit to prevent overwhelming the system
-            int maxFlights = 40;
-            int addedFlights = 0;
-
-            for (Flight flight : generatedFlights) {
-                if (addedFlights >= maxFlights) {
-                    break;
-                }
-
-                // Add each generated flight to the system
-                flightController.createFlight(
-                        flight.getFlightNumber(),
-                        flight.getAirline(),
-                        flight.getAircraft(),
-                        flight.getCategory(),
-                        flight.getType(),
-                        flight.getScheduledTime(),
-                        flight.getEmergencyStatus()
-                );
-
-                addedFlights++;
-            }
-
-            // Refresh data
-            refreshData();
-
-            // Show success message
-            lblStatus.setText("Generated " + addedFlights + " test flights successfully.");
-        } catch (Exception e) {
-            showAlert("Error", "Failed to generate flights: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    // Generate runways button handler
-    @FXML
-    private void handleGenerateRunways() {
-        try {
-            // Generate runways
-            List<Runway> generatedRunways = runwayController.generateTestRunways();
-
-            // Optional: You might want to add a limit to prevent overwhelming the system
-            int maxRunways = 10;
-            int addedRunways = 0;
-
-            for (Runway runway : generatedRunways) {
-                if (addedRunways >= maxRunways) {
-                    break;
-                }
-
-                // Add each generated runway to the system
-                runwayController.createRunway(
-                        runway.getId(),
-                        runway.getHeading(),
-                        runway.getLength()
-                );
-
-                addedRunways++;
-            }
-
-            // Refresh data
-            refreshData();
-
-            // Show success message
-            lblStatus.setText("Generated " + addedRunways + " test runways successfully.");
-        } catch (Exception e) {
-            showAlert("Error", "Failed to generate runways: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
+    
 }

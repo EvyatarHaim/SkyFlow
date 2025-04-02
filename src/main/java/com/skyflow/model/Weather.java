@@ -1,9 +1,9 @@
 package com.skyflow.model;
 
 public class Weather {
-    private double windSpeed; // In km/h
-    private int windDirection; // In degrees (0-360)
-    private double visibility; // In kilometers
+    private double windSpeed; // km/h
+    private int windDirection; // degrees
+    private double visibility; // kilometers
     private WeatherCondition condition;
 
     // Enum for different weather conditions

@@ -15,9 +15,8 @@ public class WeatherController {
         this.schedulingController = schedulingController;
         this.dbController = dbController;
 
-        // Initialize with default weather
         this.currentWeather = new Weather(
-                5.0, 0, 10.0, Weather.WeatherCondition.SUNNY);
+                12.5, 135, 25.0, Weather.WeatherCondition.SUNNY);
 
         // Load weather from database if available
         if (dbController != null) {
