@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11"
+            fx:controller="com.skyflow.view.ATCViewController">
+
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label fx:id="lblCurrentTime" style="-fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblWeatherStatus"/>
+            </HBox>
+
+            <Separator/>
+        </VBox>
+    </top>
+
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+            <Tab text="Flights">
+                <BorderPane>
+                    <center>
+                        <TableView fx:id="flightsTable">
+                            <columns>
+                                <TableColumn fx:id="colFlightId" text="Flight #" prefWidth="100"/>
+                                <TableColumn fx:id="colAirline" text="Airline" prefWidth="150"/>
+                                <TableColumn fx:id="colType" text="Type" prefWidth="100"/>
+                                <TableColumn fx:id="colScheduled" text="Scheduled" prefWidth="150"/>
+                                <TableColumn fx:id="colActual" text="Actual" prefWidth="150"/>
+                                <TableColumn fx:id="colEmergency" text="Emergency" prefWidth="120"/>
+                                <TableColumn fx:id="colRunway" text="Runway" prefWidth="100"/>
+                            </columns>
+                        </TableView>
+                    </center>
+                    <right>
+                        <VBox spacing="10" prefWidth="300">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+
+                            <Label text="Add New Flight" style="-fx-font-weight: bold;"/>
+
+                            <GridPane hgap="10" vgap="10">
+                                <Label text="Flight Number:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtFlightNumber" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                <Label text="Airline:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtAirline" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                <Label text="Aircraft:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtAircraft" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                <Label text="Category:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cboCategory" GridPane.rowIndex="3" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+                                <Label text="Flight Type:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cboFlightType" GridPane.rowIndex="4" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+                                <Label text="Scheduled Date:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                <DatePicker fx:id="dpScheduledDate" GridPane.rowIndex="5" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+                                <Label text="Scheduled Time:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtScheduledTime" promptText="HH:MM" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+                                <Label text="Emergency:" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+                                <ComboBox fx:id="cboEmergencyStatus" GridPane.rowIndex="7" GridPane.columnIndex="1" maxWidth="Infinity"/>
+
+                                <Label text="Fuel Level:" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT" GridPane.rowIndex="8" GridPane.columnIndex="1">
+                                    <Slider fx:id="sldFuelLevel" min="0" max="100" value="100" showTickLabels="true" showTickMarks="true"
+                                            majorTickUnit="25" minorTickCount="5" snapToTicks="true" HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="lblFuelPercentage" text="100%"/>
+                                </HBox>
+                            </GridPane>
+
+                            <HBox spacing="10">
+                                <Button text="Add Flight" onAction="#handleAddFlight" prefWidth="120"/>
+                                <Button text="Clear" onAction="#clearFlightForm" prefWidth="80"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="Delete Selected" onAction="#handleDeleteFlight" prefWidth="120"/>
+                            </HBox>
+
+                            <Separator/>
+
+                            <Button text="Set Emergency" onAction="#handleSetEmergency" prefWidth="200"/>
+                            <Button text="Import Data" onAction="#handleImportRealTimeFlights" prefWidth="180"/>
+                           <!-- <Button text="Generate Flights" onAction="#handleGenerateFlights" prefWidth="200"/> -->
+
+
+                        </VBox>
+                    </right>
+                </BorderPane>add
+            </Tab>
+
+            <Tab text="Runways">
+                <BorderPane>
+                    <center>
+                        <TableView fx:id="runwaysTable">
+                            <columns>
+                                <TableColumn fx:id="colRunwayId" text="Runway ID" prefWidth="100"/>
+                                <TableColumn fx:id="colHeading" text="Heading" prefWidth="100"/>
+                                <TableColumn fx:id="colLength" text="Length (m)" prefWidth="100"/>
+                                <TableColumn fx:id="colNextAvailable" text="Next Available" prefWidth="200"/>
+                                <TableColumn fx:id="colActive" text="Active" prefWidth="80"/>
+                            </columns>
+                        </TableView>
+                    </center>
+                    <right>
+                        <VBox spacing="10" prefWidth="300">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+
+                            <Label text="Add New Runway" style="-fx-font-weight: bold;"/>
+
+                            <GridPane hgap="10" vgap="10">
+                                <Label text="Runway ID:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtRunwayId" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                <Label text="Heading (0-360):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtHeading" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                <Label text="Length (meters):" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                <TextField fx:id="txtLength" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                <Label text="Active:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                <CheckBox fx:id="chkActive" selected="true" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                            </GridPane>
+
+                            <HBox spacing="10">
+                                <Button text="Add Runway" onAction="#handleAddRunway" prefWidth="120"/>
+                                <Button text="Clear" onAction="#clearRunwayForm" prefWidth="80"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="Delete Selected" onAction="#handleDeleteRunway" prefWidth="120"/>
+                            </HBox>
+
+                            <Separator/>
+
+                            <Button text="Toggle Active/Inactive" onAction="#handleToggleRunwayActive" prefWidth="200"/>
+                            <!-- <Button text="Generate Runways" onAction="#handleGenerateRunways" prefWidth="200"/> -->
+
+                        </VBox>
+                    </right>
+                </BorderPane>
+            </Tab>
+
+            <Tab text="Weather">
+                <VBox spacing="15" alignment="CENTER">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+
+                    <GridPane hgap="15" vgap="15" maxWidth="500">
+                        <Label text="Wind Speed (knots):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtWindSpeed" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                        <Label text="Wind Direction (degrees):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtWindDirection" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                        <Label text="Visibility (km):" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtVisibility" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                        <Label text="Weather Condition:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <ComboBox fx:id="cboWeatherCondition" GridPane.rowIndex="3" GridPane.columnIndex="1" maxWidth="Infinity"/>
+                    </GridPane>
+
+                    <Button text="Update Weather" onAction="#handleUpdateWeather" prefWidth="200"/>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+
+    <bottom>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Separator/>
+
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label fx:id="lblStatus" HBox.hgrow="ALWAYS"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Run Scheduling" onAction="#handleRunScheduling" prefWidth="150"/>
+                <Button text="Reset Simulation" onAction="#handleResetSimulation" prefWidth="150"/>
+            </HBox>
+        </VBox>
+    </bottom>
+
+</BorderPane>
