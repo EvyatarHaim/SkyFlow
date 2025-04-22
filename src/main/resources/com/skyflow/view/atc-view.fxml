@@ -91,12 +91,13 @@
                             <Separator/>
 
                             <Button text="Set Emergency" onAction="#handleSetEmergency" prefWidth="200"/>
+                            <Button text="Import Data" onAction="#handleImportRealTimeFlights" prefWidth="180"/>
                            <!-- <Button text="Generate Flights" onAction="#handleGenerateFlights" prefWidth="200"/> -->
 
 
                         </VBox>
                     </right>
-                </BorderPane>
+                </BorderPane>add
             </Tab>
 
             <Tab text="Runways">

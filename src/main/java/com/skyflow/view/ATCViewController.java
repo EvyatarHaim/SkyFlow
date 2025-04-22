@@ -2,7 +2,7 @@ package com.skyflow.view;
 
 import com.skyflow.controller.*;
 import com.skyflow.model.*;
-import com.skyflow.util.DatabaseController;
+import com.skyflow.util.*;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -36,6 +36,8 @@ public class ATCViewController implements Initializable {
 
     // Timeline for simulation updates
     private Timeline updateTimeline;
+
+    private OpenSkyDataImporter openSkyImporter;
 
     // FXML UI Components - Flights Table
     @FXML private TableView<Flight> flightsTable;
@@ -105,6 +107,9 @@ public class ATCViewController implements Initializable {
                 new KeyFrame(Duration.seconds(1), event -> updateSimulation())
         );
         updateTimeline.setCycleCount(Animation.INDEFINITE);
+
+        // Initialize OpenSky importer
+        openSkyImporter = new OpenSkyDataImporter(flightController, weatherController);
     }
 
     // Initialize method called after FXML is loaded
@@ -214,6 +219,47 @@ public class ATCViewController implements Initializable {
 
         // Refresh data
         Platform.runLater(this::refreshData);
+    }
+
+    @FXML
+    private void handleImportRealTimeFlights() {
+        try {
+            // Show a dialog to get number of flights to import
+            TextInputDialog dialog = new TextInputDialog("10");
+            dialog.setTitle("Import Real-Time Flights");
+            dialog.setHeaderText("How many flights would you like to import?");
+            dialog.setContentText("Number of flights:");
+
+            // Get the result
+            dialog.showAndWait().ifPresent(numFlightsStr -> {
+                try {
+                    int numFlights = Integer.parseInt(numFlightsStr);
+
+                    if (numFlights <= 0 || numFlights > 100) {
+                        showAlert("Invalid Number", "Please enter a number between 1 and 100.");
+                        return;
+                    }
+
+                    // Generate random weather as well
+                    openSkyImporter.generateRandomWeather();
+
+                    // Import flights
+                    List<Flight> importedFlights = openSkyImporter.importRealTimeFlights(numFlights);
+
+                    // Refresh the UI
+                    refreshData();
+
+                    // Update status
+                    lblStatus.setText("Imported " + importedFlights.size() + " flights with random enhancements");
+
+                } catch (NumberFormatException e) {
+                    showAlert("Invalid Input", "Please enter a valid number.");
+                }
+            });
+        } catch (Exception e) {
+            showAlert("Import Error", "Failed to import flights: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // Add a new flight to the system
