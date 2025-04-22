@@ -1,4 +1,3 @@
-// Manages runway-related operations and data
 package com.skyflow.controller;
 
 import com.skyflow.model.Runway;
@@ -24,6 +23,27 @@ public class RunwayController {
         if (dbController != null) {
             loadRunwaysFromDatabase();
         }
+
+        // Check if any runways were loaded
+        if (runways.isEmpty()) {
+            // If no runways were loaded, create default ones
+            createDefaultRunways();
+        }
+    }
+
+    // Create default runways based on Ben Gurion Airport configuration
+    private void createDefaultRunways() {
+        // Main Runway (12/30) - both directions
+        createRunway("12", 120, 3112);
+        createRunway("30", 300, 3112);
+
+        // Extended Runway (03/21) - both directions
+        createRunway("03", 30, 2772);
+        createRunway("21", 210, 2772);
+
+        // Quiet Runway (08/26) - both directions
+        createRunway("08", 80, 4062);
+        createRunway("26", 260, 4062);
     }
 
     // Create a new runway and add it to the system

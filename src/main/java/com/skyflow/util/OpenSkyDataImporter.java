@@ -81,6 +81,235 @@ public class OpenSkyDataImporter {
         return importedFlights;
     }
 
+
+//    // Import flights from OpenSky focused on TLV airport area
+//    public List<Flight> importRealTimeFlights(int numFlights) {
+//        List<Flight> importedFlights = new ArrayList<>();
+//
+//        try {
+//            // TLV coordinates: approximately 32.01° N, 34.88° E
+//            // Create a bounding box around TLV (roughly 150km square)
+//            double minLat = 31.5;  // South boundary
+//            double maxLat = 32.5;  // North boundary
+//            double minLon = 34.4;  // West boundary
+//            double maxLon = 35.4;  // East boundary
+//
+//            // Create the API query with bounding box
+//            String endpoint = String.format("/states/all?lamin=%f&lomin=%f&lamax=%f&lomax=%f",
+//                    minLat, minLon, maxLat, maxLon);
+//
+//            // Fetch states from OpenSky API
+//            String response = fetchFromOpenSky(endpoint);
+//
+//            // Parse response
+//            JsonObject jsonObject = gson.fromJson(response, JsonObject.class);
+//            JsonArray states = jsonObject.getAsJsonArray("states");
+//
+//            // If no flights in the area, generate simulated TLV flights
+//            if (states == null || states.size() == 0) {
+//                System.out.println("No flights found in TLV area, generating simulated flights");
+//                return generateSimulatedTLVFlights(numFlights);
+//            }
+//
+//            // Limit to requested number of flights
+//            int count = 0;
+//            for (JsonElement stateElement : states) {
+//                if (count >= numFlights) break;
+//
+//                JsonArray stateArray = stateElement.getAsJsonArray();
+//                if (stateArray != null && stateArray.size() >= 8) {
+//                    // Extract data from OpenSky API
+//                    String icao24 = stateArray.get(0).getAsString();
+//                    String callsign = stateArray.get(1).getAsString().trim();
+//                    String originCountry = stateArray.get(2).getAsString();
+//                    long timePosition = stateArray.get(3).isJsonNull() ? 0 : stateArray.get(3).getAsLong();
+//
+//                    // Extract position data (if we want to use it)
+//                    double latitude = stateArray.get(6).isJsonNull() ? 0 : stateArray.get(6).getAsDouble();
+//                    double longitude = stateArray.get(5).isJsonNull() ? 0 : stateArray.get(5).getAsDouble();
+//
+//                    // Skip flights with missing data
+//                    if (callsign.isEmpty() || timePosition == 0) continue;
+//
+//                    // Enhance with TLV-specific information
+//                    Flight flight = createTLVEnhancedFlight(icao24, callsign, originCountry, timePosition);
+//                    if (flight != null) {
+//                        importedFlights.add(flight);
+//                        count++;
+//                    }
+//                }
+//            }
+//
+//            System.out.println("Successfully imported " + importedFlights.size() + " flights from TLV area");
+//
+//            // If we found fewer flights than requested, add some simulated ones
+//            if (importedFlights.size() < numFlights) {
+//                int remainingFlights = numFlights - importedFlights.size();
+//                List<Flight> simulatedFlights = generateSimulatedTLVFlights(remainingFlights);
+//                importedFlights.addAll(simulatedFlights);
+//                System.out.println("Added " + simulatedFlights.size() + " simulated TLV flights to reach requested count");
+//            }
+//
+//        } catch (Exception e) {
+//            System.err.println("Error importing flights from OpenSky: " + e.getMessage());
+//            e.printStackTrace();
+//
+//            // If API fails, generate simulated flights as a fallback
+//            importedFlights = generateSimulatedTLVFlights(numFlights);
+//            System.out.println("Generated " + importedFlights.size() + " simulated TLV flights after API error");
+//        }
+//
+//        return importedFlights;
+//    }
+//
+//    // Helper method to create a TLV-enhanced flight
+//    private Flight createTLVEnhancedFlight(String icao24, String callsign, String originCountry, long timePosition) {
+//        try {
+//            // Replace with TLV-specific flight number and airline if needed
+//            String flightNumber = formatCallsign(callsign);
+//            String airline = generateAirlineName(callsign);
+//
+//            // For Israeli carriers, keep original callsign but ensure proper airline names
+//            if (originCountry.equals("Israel") || callsign.startsWith("ELY") ||
+//                    callsign.startsWith("ISR") || callsign.startsWith("AIZ")) {
+//
+//                if (callsign.startsWith("ELY")) {
+//                    airline = "El Al Israel Airlines";
+//                } else if (callsign.startsWith("ISR")) {
+//                    airline = "Israir Airlines";
+//                } else if (callsign.startsWith("AIZ")) {
+//                    airline = "Arkia Israeli Airlines";
+//                } else {
+//                    airline = callsign.substring(0, Math.min(3, callsign.length())) + " Israeli Airline";
+//                }
+//            }
+//
+//            // Generate random aircraft type
+//            String aircraftType = generateAircraftType();
+//
+//            // Random wake turbulence category (weighted toward MEDIUM)
+//            Flight.WakeTurbulenceCategory category = generateRandomCategory();
+//
+//            // Random flight type (arrival or departure)
+//            Flight.FlightType flightType = random.nextBoolean() ?
+//                    Flight.FlightType.ARRIVAL : Flight.FlightType.DEPARTURE;
+//
+//            // Create a scheduled time based on current time
+//            LocalDateTime now = LocalDateTime.now();
+//            LocalDateTime scheduledTime = now.plusMinutes(random.nextInt(180) + 15); // 15-195 minutes from now
+//
+//            // Randomly assign emergency status (10% chance of emergency)
+//            Flight.EmergencyStatus emergencyStatus = generateRandomEmergencyStatus();
+//
+//            // Create flight object
+//            Flight flight = flightController.createFlight(
+//                    flightNumber,
+//                    airline,
+//                    aircraftType,
+//                    category,
+//                    flightType,
+//                    scheduledTime,
+//                    emergencyStatus
+//            );
+//
+//            // Set random fuel level
+//            int fuelLevel = random.nextInt(90) + 10; // 10% to 100%
+//            flight.setFuelLevel(fuelLevel);
+//
+//            // If emergency is low fuel, set lower fuel level
+//            if (emergencyStatus == Flight.EmergencyStatus.LOW_FUEL) {
+//                flight.setFuelLevel(random.nextInt(10) + 5); // 5% to 15%
+//            }
+//
+//            return flight;
+//
+//        } catch (Exception e) {
+//            System.err.println("Error creating TLV-enhanced flight: " + e.getMessage());
+//            return null;
+//        }
+//    }
+//
+//    // Generate completely simulated TLV flights when no real data is available
+//    private List<Flight> generateSimulatedTLVFlights(int numFlights) {
+//        List<Flight> simulatedFlights = new ArrayList<>();
+//
+//        // TLV-specific airlines
+//        String[][] tlvAirlines = {
+//                {"ELY", "El Al Israel Airlines"},
+//                {"ISR", "Israir Airlines"},
+//                {"AIZ", "Arkia Israeli Airlines"},
+//                {"LY", "El Al"},
+//                {"6H", "Israir"},
+//                {"IZ", "Arkia"},
+//                {"LH", "Lufthansa"},
+//                {"OS", "Austrian Airlines"},
+//                {"BA", "British Airways"},
+//                {"AF", "Air France"},
+//                {"TK", "Turkish Airlines"},
+//                {"SU", "Aeroflot"},
+//                {"DL", "Delta Airlines"},
+//                {"UA", "United Airlines"},
+//                {"MS", "Egypt Air"},
+//                {"RJ", "Royal Jordanian"}
+//        };
+//
+//        for (int i = 0; i < numFlights; i++) {
+//            try {
+//                // Select a random airline
+//                int airlineIndex = random.nextInt(tlvAirlines.length);
+//                String airlineCode = tlvAirlines[airlineIndex][0];
+//                String airlineName = tlvAirlines[airlineIndex][1];
+//
+//                // Generate a flight number
+//                int flightNum = random.nextInt(900) + 100; // 100-999
+//                String flightNumber = airlineCode + flightNum;
+//
+//                // Generate random aircraft type
+//                String aircraftType = generateAircraftType();
+//
+//                // Random wake turbulence category
+//                Flight.WakeTurbulenceCategory category = generateRandomCategory();
+//
+//                // Random flight type (arrival or departure)
+//                Flight.FlightType flightType = random.nextBoolean() ?
+//                        Flight.FlightType.ARRIVAL : Flight.FlightType.DEPARTURE;
+//
+//                // Create a scheduled time
+//                LocalDateTime now = LocalDateTime.now();
+//                LocalDateTime scheduledTime = now.plusMinutes(random.nextInt(180) + 15);
+//
+//                // Random emergency status (10% chance)
+//                Flight.EmergencyStatus emergencyStatus = generateRandomEmergencyStatus();
+//
+//                // Create flight
+//                Flight flight = flightController.createFlight(
+//                        flightNumber,
+//                        airlineName,
+//                        aircraftType,
+//                        category,
+//                        flightType,
+//                        scheduledTime,
+//                        emergencyStatus
+//                );
+//
+//                // Set fuel level
+//                int fuelLevel = random.nextInt(90) + 10;
+//                flight.setFuelLevel(fuelLevel);
+//
+//                if (emergencyStatus == Flight.EmergencyStatus.LOW_FUEL) {
+//                    flight.setFuelLevel(random.nextInt(10) + 5);
+//                }
+//
+//                simulatedFlights.add(flight);
+//
+//            } catch (Exception e) {
+//                System.err.println("Error generating simulated TLV flight: " + e.getMessage());
+//            }
+//        }
+//
+//        return simulatedFlights;
+//    }
+
     // Create a flight with random enhancements
     private Flight createEnhancedFlight(String icao24, String callsign, String originCountry, long timePosition) {
         try {

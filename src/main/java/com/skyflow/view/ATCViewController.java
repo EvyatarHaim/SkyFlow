@@ -209,7 +209,7 @@ public class ATCViewController implements Initializable {
     // Update simulation
     private void updateSimulation() {
         // Update current time display
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
         lblCurrentTime.setText("Current Time: " + LocalDateTime.now().format(timeFormatter));
 
         List<Flight> scheduled = schedulingController.scheduleFlights();
