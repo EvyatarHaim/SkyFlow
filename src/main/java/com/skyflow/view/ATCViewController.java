@@ -2,6 +2,7 @@ package com.skyflow.view;
 
 import com.skyflow.controller.*;
 import com.skyflow.model.*;
+import com.skyflow.service.DatabaseService;
 import com.skyflow.util.*;
 
 import javafx.animation.Animation;
@@ -33,6 +34,8 @@ public class ATCViewController implements Initializable {
     private FlightController flightController;
     private RunwayController runwayController;
     private WeatherController weatherController;
+    private DatabaseController databaseController;
+    private DatabaseService databaseService;
 
     // Timeline for simulation updates
     private Timeline updateTimeline;
@@ -95,9 +98,16 @@ public class ATCViewController implements Initializable {
         // Set singleton instance
         instance = this;
 
-        // Set up controllers without database
+        // Initialize database controller and service
+        databaseController = new DatabaseController();
+        databaseService = new DatabaseService(databaseController);
+
+        // Set up controllers
         schedulingController = new SchedulingController();
-        flightController = new FlightController(schedulingController);
+
+        // Pass database service to FlightController
+        flightController = new FlightController(schedulingController, databaseService);
+
         runwayController = new RunwayController(schedulingController);
         weatherController = new WeatherController(schedulingController);
 
@@ -122,7 +132,7 @@ public class ATCViewController implements Initializable {
         colActual.setCellValueFactory(new PropertyValueFactory<>("actualTime"));
         colEmergency.setCellValueFactory(new PropertyValueFactory<>("emergencyStatus"));
 
-// Format date time columns to show only HH:MM
+        // Format date time columns to show only HH:MM
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
         colScheduled.setCellFactory(column -> new TableCell<Flight, LocalDateTime>() {
@@ -148,9 +158,6 @@ public class ATCViewController implements Initializable {
                 }
             }
         });
-
-//        colScheduled.setCellValueFactory(new PropertyValueFactory<>("scheduledTime"));
-//        colActual.setCellValueFactory(new PropertyValueFactory<>("actualTime"));
 
         // Custom cell factory for runway column
         colRunway.setCellValueFactory(cellData -> {
@@ -188,6 +195,18 @@ public class ATCViewController implements Initializable {
         // Set the tables' data sources
         flightsTable.setItems(flightsData);
         runwaysTable.setItems(runwaysData);
+
+        // Initialize date picker with current date
+        dpScheduledDate.setValue(java.time.LocalDate.now());
+
+        // Check database connection
+        try {
+            int aircraftCount = databaseService.getAircraftByCategory(Flight.WakeTurbulenceCategory.MEDIUM).size();
+            lblStatus.setText("Database connected successfully: " + aircraftCount + " MEDIUM aircraft available.");
+        } catch (Exception e) {
+            lblStatus.setText("Warning: Database connection issue. Using fallback data.");
+            System.err.println("Database initialization error: " + e.getMessage());
+        }
 
         // Load data
         refreshData();
@@ -243,9 +262,6 @@ public class ATCViewController implements Initializable {
 
         List<Flight> scheduled = schedulingController.scheduleFlights();
 
-        // Update status without mentioning scheduled flights
-        // lblStatus.setText("Last Update: " + LocalDateTime.now().format(timeFormatter));
-
         // Refresh data
         Platform.runLater(this::refreshData);
     }
@@ -279,7 +295,7 @@ public class ATCViewController implements Initializable {
                     refreshData();
 
                     // Update status
-                    lblStatus.setText("Imported " + importedFlights.size() + " flights with random enhancements");
+                    lblStatus.setText("Imported " + importedFlights.size() + " flights from OpenSky API");
 
                 } catch (NumberFormatException e) {
                     showAlert("Invalid Input", "Please enter a valid number.");
@@ -594,12 +610,6 @@ public class ATCViewController implements Initializable {
                 flightController.deleteFlight(flight);
             }
 
-            // Reset runways to available state
-//            for (Runway runway : runwayController.getAllRunways()) {
-//                runway.setNextAvailableTime(LocalDateTime.now());
-//                runwayController.updateRunway(runway);
-//            }
-
             // Reset the scheduling controller
             schedulingController.reset();
 
@@ -634,11 +644,15 @@ public class ATCViewController implements Initializable {
         if (updateTimeline != null) {
             updateTimeline.stop();
         }
+
+        // Close database connection
+        if (databaseController != null) {
+            databaseController.shutdown();
+        }
     }
 
     // Get singleton instance
     public static ATCViewController getInstance() {
         return instance;
     }
-    
 }

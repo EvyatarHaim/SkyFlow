@@ -1,19 +1,24 @@
 package com.skyflow.controller;
 
 import com.skyflow.model.Flight;
+import com.skyflow.service.DatabaseService;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class FlightController {
     private List<Flight> flights;
     private SchedulingController schedulingController;
+    private DatabaseService databaseService;
 
-    // Constructor
-    public FlightController(SchedulingController schedulingController) {
+    // Constructor with database service
+    public FlightController(SchedulingController schedulingController, DatabaseService databaseService) {
         this.flights = new ArrayList<>();
         this.schedulingController = schedulingController;
+        this.databaseService = databaseService;
     }
 
     // Create a new flight and add it to the system
@@ -37,6 +42,7 @@ public class FlightController {
 
         return flight;
     }
+
 
     // Update an existing flight
     public void updateFlight(Flight flight) {
@@ -90,4 +96,5 @@ public class FlightController {
         }
         return null;
     }
+
 }
