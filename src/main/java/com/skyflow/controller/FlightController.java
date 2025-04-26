@@ -1,30 +1,19 @@
 package com.skyflow.controller;
 
 import com.skyflow.model.Flight;
-import com.skyflow.util.DatabaseController;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 public class FlightController {
     private List<Flight> flights;
-    private DatabaseController dbController;
     private SchedulingController schedulingController;
 
     // Constructor
-    public FlightController(SchedulingController schedulingController,
-                            DatabaseController dbController) {
+    public FlightController(SchedulingController schedulingController) {
         this.flights = new ArrayList<>();
         this.schedulingController = schedulingController;
-        this.dbController = dbController;
-
-        // Load flights from database if available
-        if (dbController != null) {
-            loadFlightsFromDatabase();
-        }
     }
 
     // Create a new flight and add it to the system
@@ -33,7 +22,6 @@ public class FlightController {
                                Flight.FlightType type,
                                LocalDateTime scheduledTime,
                                Flight.EmergencyStatus emergencyStatus) {
-
         // Generate a unique ID for the flight
         String id = UUID.randomUUID().toString();
 
@@ -47,21 +35,11 @@ public class FlightController {
         // Add to scheduling queue
         schedulingController.addFlight(flight);
 
-        // Save to database if available
-        if (dbController != null) {
-            dbController.saveFlight(flight);
-        }
-
         return flight;
     }
 
     // Update an existing flight
     public void updateFlight(Flight flight) {
-        // Update in database if available
-        if (dbController != null) {
-            dbController.updateFlight(flight);
-        }
-
         // The flight should update its priority automatically when properties change
         // Make sure scheduling controller is aware of changes
         schedulingController.scheduleFlights();
@@ -70,11 +48,6 @@ public class FlightController {
     // Delete a flight
     public void deleteFlight(Flight flight) {
         flights.remove(flight);
-
-        // Remove from database if available
-        if (dbController != null) {
-            dbController.deleteFlight(flight);
-        }
     }
 
     // Set emergency status for a flight
@@ -100,20 +73,6 @@ public class FlightController {
         // Low fuel might change priority significantly
         if (fuelLevel < 20) {
             schedulingController.scheduleFlights();
-        }
-    }
-
-    // Load flights from database
-    private void loadFlightsFromDatabase() {
-        List<Flight> loadedFlights = dbController.loadAllFlights();
-
-        if (loadedFlights != null) {
-            flights.addAll(loadedFlights);
-
-            // Add all loaded flights to scheduling controller
-            for (Flight flight : loadedFlights) {
-                schedulingController.addFlight(flight);
-            }
         }
     }
 

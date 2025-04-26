@@ -25,11 +25,10 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class ATCViewController implements Initializable {
-    // Singleton instance for access from Application.stop()
+    // Singleton instance
     private static ATCViewController instance;
 
     // Controllers
-    private DatabaseController dbController;
     private SchedulingController schedulingController;
     private FlightController flightController;
     private RunwayController runwayController;
@@ -96,12 +95,11 @@ public class ATCViewController implements Initializable {
         // Set singleton instance
         instance = this;
 
-        // Set up controllers
-        dbController = new DatabaseController();
+        // Set up controllers without database
         schedulingController = new SchedulingController();
-        flightController = new FlightController(schedulingController, dbController);
-        runwayController = new RunwayController(schedulingController, dbController);
-        weatherController = new WeatherController(schedulingController, dbController);
+        flightController = new FlightController(schedulingController);
+        runwayController = new RunwayController(schedulingController);
+        weatherController = new WeatherController(schedulingController);
 
         // Create update timeline for simulation
         updateTimeline = new Timeline(
@@ -635,11 +633,6 @@ public class ATCViewController implements Initializable {
         // Stop the update timeline
         if (updateTimeline != null) {
             updateTimeline.stop();
-        }
-
-        // Close database connection
-        if (dbController != null) {
-            dbController.closeConnection();
         }
     }
 
