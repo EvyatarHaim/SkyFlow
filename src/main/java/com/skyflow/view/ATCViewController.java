@@ -20,6 +20,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -122,6 +123,36 @@ public class ATCViewController implements Initializable {
         colScheduled.setCellValueFactory(new PropertyValueFactory<>("scheduledTime"));
         colActual.setCellValueFactory(new PropertyValueFactory<>("actualTime"));
         colEmergency.setCellValueFactory(new PropertyValueFactory<>("emergencyStatus"));
+
+// Format date time columns to show only HH:MM
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        colScheduled.setCellFactory(column -> new TableCell<Flight, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(timeFormatter.format(item));
+                }
+            }
+        });
+
+        colActual.setCellFactory(column -> new TableCell<Flight, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(timeFormatter.format(item));
+                }
+            }
+        });
+
+//        colScheduled.setCellValueFactory(new PropertyValueFactory<>("scheduledTime"));
+//        colActual.setCellValueFactory(new PropertyValueFactory<>("actualTime"));
 
         // Custom cell factory for runway column
         colRunway.setCellValueFactory(cellData -> {
@@ -557,8 +588,24 @@ public class ATCViewController implements Initializable {
     private void handleResetSimulation() {
         if (showConfirmation("Reset Simulation",
                 "Are you sure you want to reset the simulation? " +
-                        "This will clear all flights and reset runways.")) {
+                        "This will clear all flights.")) {
+
+            // Get current flights and delete them
+            List<Flight> currentFlights = new ArrayList<>(flightController.getAllFlights());
+            for (Flight flight : currentFlights) {
+                flightController.deleteFlight(flight);
+            }
+
+            // Reset runways to available state
+//            for (Runway runway : runwayController.getAllRunways()) {
+//                runway.setNextAvailableTime(LocalDateTime.now());
+//                runwayController.updateRunway(runway);
+//            }
+
+            // Reset the scheduling controller
             schedulingController.reset();
+
+            // Refresh UI
             refreshData();
             lblStatus.setText("Simulation reset successfully.");
         }
