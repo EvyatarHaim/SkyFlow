@@ -40,7 +40,7 @@ public class ATCViewController implements Initializable {
     // Timeline for simulation updates
     private Timeline updateTimeline;
 
-    private OpenSkyDataImporter openSkyImporter;
+    private OpenSkyDataImport openSkyImporter;
 
     // FXML UI Components - Flights Table
     @FXML private TableView<Flight> flightsTable;
@@ -118,7 +118,7 @@ public class ATCViewController implements Initializable {
         updateTimeline.setCycleCount(Animation.INDEFINITE);
 
         // Initialize OpenSky importer
-        openSkyImporter = new OpenSkyDataImporter(flightController, weatherController);
+        openSkyImporter = new OpenSkyDataImport(flightController, weatherController);
     }
 
     // Initialize method called after FXML is loaded

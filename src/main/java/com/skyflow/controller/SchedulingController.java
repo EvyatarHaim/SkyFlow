@@ -51,95 +51,63 @@ public class SchedulingController {
         return timeDifference > 30;
     }
 
-    // Schedule flights with improved stability and conflict resolution
     public List<Flight> scheduleFlights() {
-        // Prevent unnecessary rescheduling if no flights are in the queue
+        // prevent unnecessary rescheduling
         if (flightQueue.isEmpty()) {
             return new ArrayList<>(scheduledFlights);
         }
 
-        // To prevent duplications, use a set to track processed flights
         Set<String> processedFlightIds = new HashSet<>();
-
-        // Create a copy of the original queue for working
         PriorityQueue<Flight> workingQueue = new PriorityQueue<>(new FlightComparator());
-
-        // Copy flights from the original queue to the working queue
-        for (Flight flight : flightQueue) {
-            workingQueue.offer(flight);
-        }
-
-        // Clear the original queue (we'll refill it with unscheduled flights)
+        workingQueue.addAll(flightQueue);
         flightQueue.clear();
 
-        // Track flights that couldn't be scheduled
         List<Flight> unscheduledFlights = new ArrayList<>();
-
-        // Clear previous scheduling results
         scheduledFlights.clear();
 
-        // Process all flights in the queue
         while (!workingQueue.isEmpty()) {
-            // Get the flight with highest priority
             Flight currentFlight = workingQueue.poll();
 
-            // Track processed flights to prevent duplicate processing
-            if (processedFlightIds.contains(currentFlight.getId())) {
-                continue;
-            }
-            processedFlightIds.add(currentFlight.getId());
+            // process each flight only once
+            if (!processedFlightIds.contains(currentFlight.getId())) {
+                processedFlightIds.add(currentFlight.getId());
 
-            // Handle emergency flights with priority
-            if (currentFlight.getEmergencyStatus() != Flight.EmergencyStatus.NONE) {
-                handleEmergencyFlight(currentFlight);
-                continue;
-            }
+                // emergency flights get special handling
+                if (currentFlight.getEmergencyStatus() != Flight.EmergencyStatus.NONE) {
+                    handleEmergencyFlight(currentFlight);
+                } else {
+                    // attempt normal scheduling
+                    Runway bestRunway = selectBestRunway(currentFlight);
+                    boolean needsScheduling =
+                            bestRunway != null &&
+                                    (currentFlight.getAssignedRunway() == null ||
+                                            isReschedulingNecessary(currentFlight, bestRunway));
 
-            // Find the best available runway for this flight
-            Runway bestRunway = selectBestRunway(currentFlight);
+                    if (needsScheduling) {
+                        LocalDateTime earliestTime = calculateEarliestTime(currentFlight, bestRunway);
+                        List<Flight> conflicts = checkForConflicts(earliestTime, bestRunway);
+                        if (!conflicts.isEmpty()) {
+                            earliestTime = resolveConflicts(currentFlight, conflicts, earliestTime);
+                        }
 
-            // Check if scheduling is necessary and possible
-            if (bestRunway != null &&
-                    (currentFlight.getAssignedRunway() == null ||
-                            isReschedulingNecessary(currentFlight, bestRunway))) {
-
-                // Calculate the earliest possible operation time
-                LocalDateTime earliestTime = calculateEarliestTime(currentFlight, bestRunway);
-
-                // Check for conflicts with already scheduled flights
-                List<Flight> conflicts = checkForConflicts(earliestTime, bestRunway);
-
-                if (!conflicts.isEmpty()) {
-                    // Resolve conflicts and adjust timing
-                    earliestTime = resolveConflicts(currentFlight, conflicts, earliestTime);
+                        currentFlight.setAssignedRunway(bestRunway);
+                        currentFlight.setActualTime(earliestTime);
+                        bestRunway.updateNextAvailableTime(
+                                earliestTime,
+                                currentFlight.getCategory(),
+                                safetyMatrix,
+                                currentWeather
+                        );
+                        scheduledFlights.add(currentFlight);
+                    } else {
+                        unscheduledFlights.add(currentFlight);
+                    }
                 }
-
-                // Assign runway and time to the flight
-                currentFlight.setAssignedRunway(bestRunway);
-                currentFlight.setActualTime(earliestTime);
-
-                // Update runway's next available time
-                bestRunway.updateNextAvailableTime(
-                        earliestTime,
-                        currentFlight.getCategory(),
-                        safetyMatrix,
-                        currentWeather
-                );
-
-                // Add to scheduled flights
-                scheduledFlights.add(currentFlight);
-            } else {
-                // If no runway is available or rescheduling is not necessary
-                unscheduledFlights.add(currentFlight);
             }
         }
 
-        // Handle any unscheduled flights
         if (!unscheduledFlights.isEmpty()) {
-            // Log unscheduled flights
             System.out.println("Warning: " + unscheduledFlights.size() + " flights could not be scheduled.");
-
-            // Retry scheduling unscheduled flights
             for (Flight unscheduledFlight : unscheduledFlights) {
                 unscheduledFlight.updatePriority();
                 flightQueue.offer(unscheduledFlight);
@@ -149,7 +117,7 @@ public class SchedulingController {
         return new ArrayList<>(scheduledFlights);
     }
 
-    // Handle emergency flights with priority
+    // Handle emergency flights with priority by giving them the best runway available
     private void handleEmergencyFlight(Flight emergency) {
         // For emergencies, find any available runway with highest score
         Runway bestRunway = null;
@@ -184,25 +152,30 @@ public class SchedulingController {
                         flight.getEmergencyStatus() == Flight.EmergencyStatus.NONE &&
                         flight.getActualTime() != null) {
 
+                    boolean isConflict = false;
+
                     // Check for exact time conflict first (most serious)
                     if (flight.getActualTime().equals(baseTime)) {
                         conflictingFlights.add(flight);
-                        continue;
+                        isConflict = true;
                     }
 
-                    // Also check for separation conflicts - too close in time
-                    long timeDiffSeconds = Math.abs(Duration.between(baseTime, flight.getActualTime()).getSeconds());
+                    // If no exact time conflict, check for separation conflicts
+                    if (!isConflict) {
+                        // Check for separation conflicts - too close in time
+                        long timeDiffSeconds = Math.abs(Duration.between(baseTime, flight.getActualTime()).getSeconds());
 
-                    // Get required separation time
-                    int requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
-                            flight.getCategory(), emergency.getCategory());
+                        // Get required separation time
+                        int requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
+                                flight.getCategory(), emergency.getCategory());
 
-                    // Adjust for weather
-                    requiredSeparation = (int)(requiredSeparation * currentWeather.getWeatherFactor());
+                        // Adjust for weather
+                        requiredSeparation = (int)(requiredSeparation * currentWeather.getWeatherFactor());
 
-                    // If too close, it's a conflict
-                    if (timeDiffSeconds < requiredSeparation) {
-                        conflictingFlights.add(flight);
+                        // If too close, it's a conflict
+                        if (timeDiffSeconds < requiredSeparation) {
+                            conflictingFlights.add(flight);
+                        }
                     }
                 }
             }
@@ -292,10 +265,16 @@ public class SchedulingController {
             }
 
             // Add final check for exact time conflicts with any remaining flights
-            boolean hasExactConflict;
-            do {
+            boolean hasExactConflict = true;
+            while (hasExactConflict) {
                 hasExactConflict = false;
-                for (Flight flight : scheduledFlights) {
+                int i = 0;
+                boolean conflictFound = false;
+
+                // Iterate through all scheduled flights
+                while (i < scheduledFlights.size() && !conflictFound) {
+                    Flight flight = scheduledFlights.get(i);
+
                     if (flight.getAssignedRunway() == bestRunway &&
                             flight.getActualTime() != null &&
                             flight.getActualTime().equals(earliestAvailableTime)) {
@@ -303,10 +282,11 @@ public class SchedulingController {
                         // Found an exact time conflict, add 15 seconds
                         earliestAvailableTime = earliestAvailableTime.plusSeconds(15);
                         hasExactConflict = true;
-                        break;
+                        conflictFound = true;
                     }
+                    i++;
                 }
-            } while (hasExactConflict);
+            }
 
             // Assign the runway and time to emergency flight
             emergency.setAssignedRunway(bestRunway);
@@ -345,32 +325,34 @@ public class SchedulingController {
                             flight.getActualTime() != null) {
 
                         // Skip emergency flights (don't reschedule them)
-                        if (flight.getEmergencyStatus() != Flight.EmergencyStatus.NONE) {
-                            continue;
-                        }
+                        boolean isEmergency = flight.getEmergencyStatus() != Flight.EmergencyStatus.NONE;
+                        boolean hasExactTimeMatch = flight.getActualTime().equals(baseTime);
 
-                        // Check for exact time match
-                        if (flight.getActualTime().equals(baseTime)) {
-                            // For exact time conflict, move existing flight
-                            scheduledFlights.remove(flight);
-                            flight.updatePriority();
-                            flightQueue.offer(flight);
-                            continue;
-                        }
+                        // Process non-emergency flights
+                        if (!isEmergency) {
+                            // Handle exact time match
+                            if (hasExactTimeMatch) {
+                                // For exact time conflict, move existing flight
+                                scheduledFlights.remove(flight);
+                                flight.updatePriority();
+                                flightQueue.offer(flight);
+                            } else {
+                                // Check for separation conflicts
+                                int requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
+                                        flight.getCategory(), emergency.getCategory());
+                                requiredSeparation = (int)(requiredSeparation * currentWeather.getWeatherFactor());
 
-                        int requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
-                                flight.getCategory(), emergency.getCategory());
-                        requiredSeparation = (int)(requiredSeparation * currentWeather.getWeatherFactor());
-
-                        if (flight.getActualTime().isAfter(baseTime) || flight.getActualTime().isEqual(baseTime)) {
-                            LocalDateTime safeTime = flight.getActualTime().plusSeconds(requiredSeparation);
-                            if (safeTime.isAfter(earliestAvailableTime)) {
-                                earliestAvailableTime = safeTime;
-                            }
-                        } else {
-                            LocalDateTime safeTime = flight.getActualTime().plusSeconds(requiredSeparation);
-                            if (safeTime.isAfter(baseTime) && safeTime.isAfter(earliestAvailableTime)) {
-                                earliestAvailableTime = safeTime;
+                                if (flight.getActualTime().isAfter(baseTime) || flight.getActualTime().isEqual(baseTime)) {
+                                    LocalDateTime safeTime = flight.getActualTime().plusSeconds(requiredSeparation);
+                                    if (safeTime.isAfter(earliestAvailableTime)) {
+                                        earliestAvailableTime = safeTime;
+                                    }
+                                } else {
+                                    LocalDateTime safeTime = flight.getActualTime().plusSeconds(requiredSeparation);
+                                    if (safeTime.isAfter(baseTime) && safeTime.isAfter(earliestAvailableTime)) {
+                                        earliestAvailableTime = safeTime;
+                                    }
+                                }
                             }
                         }
                     }
@@ -476,7 +458,7 @@ public class SchedulingController {
         return runwayAvailableTime;
     }
 
-    // Check for conflicts with already scheduled flights
+    // Check for conflicts with already scheduled flights on the same runway
     private List<Flight> checkForConflicts(LocalDateTime proposedTime, Runway runway) {
         List<Flight> conflicts = new ArrayList<>();
 
@@ -484,47 +466,51 @@ public class SchedulingController {
             // Only consider flights on the same runway
             if (scheduledFlight.getAssignedRunway() == runway) {
                 LocalDateTime scheduledTime = scheduledFlight.getActualTime();
+                boolean conflictFound = false;
 
                 // EXACT time match is always a conflict
                 if (scheduledTime.equals(proposedTime)) {
                     conflicts.add(scheduledFlight);
-                    continue;
+                    conflictFound = true;
                 }
 
-                // Is this a flight with higher priority (emergency)?
-                boolean isHigherPriority = scheduledFlight.getEmergencyStatus() != Flight.EmergencyStatus.NONE &&
-                        scheduledFlight.getEmergencyStatus().getPriorityLevel() >
-                                Flight.EmergencyStatus.NONE.getPriorityLevel();
+                // If no exact time conflict was found, check for separation conflicts
+                if (!conflictFound) {
+                    // Is this a flight with higher priority (emergency)?
+                    boolean isHigherPriority = scheduledFlight.getEmergencyStatus() != Flight.EmergencyStatus.NONE &&
+                            scheduledFlight.getEmergencyStatus().getPriorityLevel() >
+                                    Flight.EmergencyStatus.NONE.getPriorityLevel();
 
-                // Check if the time difference is too small
-                long timeDifferenceSeconds = Math.abs(
-                        Duration.between(proposedTime, scheduledTime).getSeconds()
-                );
-
-                // Get required separation based on aircraft categories
-                int requiredSeparation;
-
-                // Determine leading and following aircraft based on time
-                if (scheduledTime.isBefore(proposedTime)) {
-                    // Scheduled flight is leading
-                    requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
-                            scheduledFlight.getCategory(),
-                            scheduledFlight.getCategory() // Using same category as placeholder (will be replaced)
+                    // Check if the time difference is too small
+                    long timeDifferenceSeconds = Math.abs(
+                            Duration.between(proposedTime, scheduledTime).getSeconds()
                     );
-                } else {
-                    // New flight is leading
-                    requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
-                            scheduledFlight.getCategory(), // Using same category as placeholder (will be replaced)
-                            scheduledFlight.getCategory()
-                    );
-                }
 
-                // Adjust for weather conditions
-                requiredSeparation = (int)(requiredSeparation * currentWeather.getWeatherFactor());
+                    // Get required separation based on aircraft categories
+                    int requiredSeparation;
 
-                // If time difference is less than required separation, it's a conflict
-                if (timeDifferenceSeconds < requiredSeparation) {
-                    conflicts.add(scheduledFlight);
+                    // Determine leading and following aircraft based on time
+                    if (scheduledTime.isBefore(proposedTime)) {
+                        // Scheduled flight is leading
+                        requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
+                                scheduledFlight.getCategory(),
+                                scheduledFlight.getCategory() // Using same category as placeholder (will be replaced)
+                        );
+                    } else {
+                        // New flight is leading
+                        requiredSeparation = safetyMatrix.getSeparationTimeSeconds(
+                                scheduledFlight.getCategory(), // Using same category as placeholder (will be replaced)
+                                scheduledFlight.getCategory()
+                        );
+                    }
+
+                    // Adjust for weather conditions
+                    requiredSeparation = (int)(requiredSeparation * currentWeather.getWeatherFactor());
+
+                    // If time difference is less than required separation, it's a conflict
+                    if (timeDifferenceSeconds < requiredSeparation) {
+                        conflicts.add(scheduledFlight);
+                    }
                 }
             }
         }
@@ -534,13 +520,17 @@ public class SchedulingController {
             if (scheduledFlight.getAssignedRunway() == runway &&
                     scheduledFlight.getActualTime() != null) {
 
+                boolean nearbyConflictFound = false;
+                int i = -15;
+
                 // Check nearby times (+/- 15 seconds)
-                for (int i = -15; i <= 15; i++) {
+                while (i <= 15 && !nearbyConflictFound) {
                     LocalDateTime nearbyTime = proposedTime.plusSeconds(i);
                     if (scheduledFlight.getActualTime().equals(nearbyTime)) {
                         conflicts.add(scheduledFlight);
-                        break;
+                        nearbyConflictFound = true;
                     }
+                    i++;
                 }
             }
         }
@@ -596,7 +586,7 @@ public class SchedulingController {
                 !currentRunway.getNextAvailableTime().isBefore(flight.getScheduledTime());
     }
 
-    // Delay a low priority flight if no runways are available
+    // Find and delay the flight with lowest priority to allow for higher priority flights
     private void delayLowPriorityFlight(Queue<Flight> queue) {
         // Find the flight with lowest priority in the scheduled list
         Flight lowestPriority = null;
@@ -604,14 +594,14 @@ public class SchedulingController {
         for (Flight flight : scheduledFlights) {
             // Only consider flights in the future (that haven't happened yet)
             if (flight.getActualTime().isAfter(LocalDateTime.now())) {
-                // Skip emergency flights
-                if (flight.getEmergencyStatus() != Flight.EmergencyStatus.NONE) {
-                    continue;
-                }
+                // Only consider non-emergency flights
+                boolean isNonEmergency = flight.getEmergencyStatus() == Flight.EmergencyStatus.NONE;
 
-                if (lowestPriority == null ||
-                        flight.getPriority() < lowestPriority.getPriority()) {
-                    lowestPriority = flight;
+                if (isNonEmergency) {
+                    // Check if this is the first valid flight or has lower priority than current lowest
+                    if (lowestPriority == null || flight.getPriority() < lowestPriority.getPriority()) {
+                        lowestPriority = flight;
+                    }
                 }
             }
         }
@@ -648,7 +638,6 @@ public class SchedulingController {
             queue.offer(lowestPriority);
         }
     }
-
     // Getters and utility methods
     public List<Flight> getScheduledFlights() {
         return scheduledFlights;

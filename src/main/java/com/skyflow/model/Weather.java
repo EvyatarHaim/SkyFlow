@@ -8,12 +8,22 @@ public class Weather {
 
     // Enum for different weather conditions
     public enum WeatherCondition {
-        SUNNY,
-        CLOUDY,
-        RAINY,
-        SNOWY,
-        FOGGY,
-        THUNDERSTORM
+        SUNNY(1.0),
+        CLOUDY(1.1),
+        RAINY(1.3),
+        SNOWY(1.8),
+        FOGGY(1.6),
+        THUNDERSTORM(2.0);
+
+        private final double separationMultiplier;
+
+        WeatherCondition(double separationMultiplier) {
+            this.separationMultiplier = separationMultiplier;
+        }
+
+        public double getSeparationMultiplier() {
+            return separationMultiplier;
+        }
     }
 
     // Constructor
@@ -51,49 +61,27 @@ public class Weather {
     }
 
     // Get a weather factor that affects separation times
+    // Calculate a combined weather factor for separation times
     public double getWeatherFactor() {
-        double factor = 1.0;
+        return calculateVisibilityFactor()
+                * calculateWindSpeedFactor()
+                * condition.getSeparationMultiplier();
+    }
 
-        // Adjust for visibility
-        if (visibility < 1.0) {
-            factor *= 2.0; // Severe visibility issues
-        } else if (visibility < 3.0) {
-            factor *= 1.5; // Moderate visibility issues
-        } else if (visibility < 5.0) {
-            factor *= 1.2; // Slight visibility issues
-        }
+    // Determine visibility-based multiplier
+    private double calculateVisibilityFactor() {
+        if (visibility < 1.0) return 2.0;
+        if (visibility < 3.0) return 1.5;
+        if (visibility < 5.0) return 1.2;
+        return 1.0;
+    }
 
-        // Adjust for wind speed
-        if (windSpeed > 30) {
-            factor *= 1.5; // Strong winds
-        } else if (windSpeed > 20) {
-            factor *= 1.3; // Moderate winds
-        } else if (windSpeed > 10) {
-            factor *= 1.1; // Light winds
-        }
-
-        // Adjust for weather condition
-        switch (condition) {
-            case SUNNY:
-                break;
-            case CLOUDY:
-                factor *= 1.1;
-                break;
-            case RAINY:
-                factor *= 1.3;
-                break;
-            case SNOWY:
-                factor *= 1.8;
-                break;
-            case FOGGY:
-                factor *= 1.6;
-                break;
-            case THUNDERSTORM:
-                factor *= 2.0;
-                break;
-        }
-
-        return factor;
+    // Determine wind-speed–based multiplier
+    private double calculateWindSpeedFactor() {
+        if (windSpeed > 30) return 1.5;
+        if (windSpeed > 20) return 1.3;
+        if (windSpeed > 10) return 1.1;
+        return 1.0;
     }
 
     public double getWindSpeed() {

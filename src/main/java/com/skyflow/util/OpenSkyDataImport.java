@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class OpenSkyDataImporter {
+public class OpenSkyDataImport {
     private final FlightController flightController;
     private final WeatherController weatherController;
     private final Random random = new Random();
@@ -29,12 +29,12 @@ public class OpenSkyDataImporter {
     private static final String OPENSKY_API_URL = "https://opensky-network.org/api";
 
     // Constructor
-    public OpenSkyDataImporter(FlightController flightController, WeatherController weatherController) {
+    public OpenSkyDataImport(FlightController flightController, WeatherController weatherController) {
         this.flightController = flightController;
         this.weatherController = weatherController;
     }
 
-    // Import flights from OpenSky API
+    // Import flights from OpenSky API and enhance them with additional information
     public List<Flight> importRealTimeFlights(int numFlights) {
         List<Flight> importedFlights = new ArrayList<>();
 
@@ -48,10 +48,14 @@ public class OpenSkyDataImporter {
 
             // Limit to requested number of flights
             int count = 0;
-            for (JsonElement stateElement : states) {
-                if (count >= numFlights) break;
+            int i = 0;
+            boolean reachedLimit = false;
 
+            // Iterate through states array until we reach the requested flight count
+            while (i < states.size() && !reachedLimit) {
+                JsonElement stateElement = states.get(i);
                 JsonArray stateArray = stateElement.getAsJsonArray();
+
                 if (stateArray != null && stateArray.size() >= 8) {
                     // Extract data from OpenSky API
                     String icao24 = stateArray.get(0).getAsString();
@@ -59,16 +63,26 @@ public class OpenSkyDataImporter {
                     String originCountry = stateArray.get(2).getAsString();
                     long timePosition = stateArray.get(3).isJsonNull() ? 0 : stateArray.get(3).getAsLong();
 
-                    // Skip flights with missing data
-                    if (callsign.isEmpty() || timePosition == 0) continue;
+                    // Process flights with valid data
+                    boolean hasValidData = !callsign.isEmpty() && timePosition != 0;
 
-                    // Create flight with random enhancements
-                    Flight flight = createEnhancedFlight(icao24, callsign, originCountry, timePosition);
-                    if (flight != null) {
-                        importedFlights.add(flight);
-                        count++;
+                    if (hasValidData) {
+                        // Create flight with random enhancements
+                        Flight flight = createEnhancedFlight(icao24, callsign, originCountry, timePosition);
+
+                        if (flight != null) {
+                            importedFlights.add(flight);
+                            count++;
+
+                            // Check if we've reached the requested number of flights
+                            if (count >= numFlights) {
+                                reachedLimit = true;
+                            }
+                        }
                     }
                 }
+
+                i++;
             }
 
             System.out.println("Successfully imported " + importedFlights.size() + " flights from OpenSky");
@@ -86,7 +100,6 @@ public class OpenSkyDataImporter {
 
         return importedFlights;
     }
-
     // Create a flight with random enhancements
     private Flight createEnhancedFlight(String icao24, String callsign, String originCountry, long timePosition) {
         try {

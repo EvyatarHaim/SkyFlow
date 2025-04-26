@@ -159,7 +159,7 @@
                     </padding>
 
                     <GridPane hgap="15" vgap="15" maxWidth="500">
-                        <Label text="Wind Speed (knots):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <Label text="Wind Speed (km/h):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
                         <TextField fx:id="txtWindSpeed" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
 
                         <Label text="Wind Direction (degrees):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
