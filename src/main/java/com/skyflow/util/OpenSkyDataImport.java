@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.skyflow.controller.DatabaseController;
 import com.skyflow.controller.FlightController;
 import com.skyflow.controller.WeatherController;
 import com.skyflow.model.Flight;
@@ -18,11 +19,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class OpenSkyDataImport {
     private final FlightController flightController;
     private final WeatherController weatherController;
+    DatabaseController databaseService;
     private final Random random = new Random();
     private final Gson gson = new Gson();
 
@@ -32,6 +35,7 @@ public class OpenSkyDataImport {
     public OpenSkyDataImport(FlightController flightController, WeatherController weatherController) {
         this.flightController = flightController;
         this.weatherController = weatherController;
+        this.databaseService = databaseService;
     }
 
     // Import flights from OpenSky API and enhance them with additional information
@@ -233,24 +237,25 @@ public class OpenSkyDataImport {
     }
 
     private String generateAirlineName(String callsign) {
-        String prefix = callsign.length() >= 3 ? callsign.substring(0, 3) : callsign;
-
-        // Map common airline codes to names
-        switch (prefix) {
-            case "AAL": return "American Airlines";
-            case "UAL": return "United Airlines";
-            case "DAL": return "Delta Airlines";
-            case "BAW": return "British Airways";
-            case "DLH": return "Lufthansa";
-            case "AFR": return "Air France";
-            case "KLM": return "KLM Royal Dutch Airlines";
-            case "UAE": return "Emirates";
-            case "SIA": return "Singapore Airlines";
-            case "QTR": return "Qatar Airways";
-            default: return prefix + " Airlines";
+        // Extract the first 3 characters which should be the ICAO code
+        String icaoCode = "";
+        if (callsign.length() >= 3) {
+            icaoCode = callsign.substring(0, 3);
+        } else {
+            icaoCode = callsign;
         }
-    }
 
+        // Try to find the airline in the database
+        Map<String, String> airline = databaseService.getAirlineByCode(icaoCode);
+
+        // If found in database, return the airline name
+        if (airline != null && airline.get("name") != null) {
+            return airline.get("name");
+        }
+
+        // If not found, return a default name
+        return icaoCode + " Airlines";
+    }
     private String generateAircraftType() {
         String[] commonAircraft = {
                 "Boeing 737-800",

@@ -137,15 +137,15 @@ public class DatabaseController {
     // Get airline by code
     public Map<String, String> getAirlineByCode(String code) {
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT name, code FROM airlines WHERE code = ?")) {
+                "SELECT icao_code, airline_name FROM airline WHERE icao_code = ?")) {
 
             statement.setString(1, code);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
                 Map<String, String> airline = new HashMap<>();
-                airline.put("name", resultSet.getString("name"));
-                airline.put("code", resultSet.getString("code"));
+                airline.put("code", resultSet.getString("icao_code"));
+                airline.put("name", resultSet.getString("airline_name"));
                 return airline;
             }
 

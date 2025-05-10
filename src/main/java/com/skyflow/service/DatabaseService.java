@@ -54,6 +54,22 @@ public class DatabaseService {
         return code + " Airlines"; // Default fallback
     }
 
+    public Map<String, String> getAirlineByCode(String icaoCode) {
+        // Check cache first
+        if (airlineCache.containsKey(icaoCode)) {
+            return airlineCache.get(icaoCode);
+        }
+
+        // Query database if not in cache
+        Map<String, String> airline = databaseController.getAirlineByCode(icaoCode);
+        if (airline != null) {
+            // Add to cache
+            airlineCache.put(icaoCode, airline);
+            return airline;
+        }
+
+        return null;
+    }
 
     // Get aircraft details by name
     public Map<String, Object> getAircraftByName(String name) {
