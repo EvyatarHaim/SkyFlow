@@ -54,6 +54,7 @@ public class DatabaseService {
         return code + " Airlines"; // Default fallback
     }
 
+    // Get airline by ICAO code from db
     public Map<String, String> getAirlineByCode(String icaoCode) {
         // Check cache first
         if (airlineCache.containsKey(icaoCode)) {

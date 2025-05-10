@@ -97,4 +97,8 @@ public class FlightController {
         return null;
     }
 
+    public DatabaseService getDatabaseService() {
+        return this.databaseService;
+    }
+
 }

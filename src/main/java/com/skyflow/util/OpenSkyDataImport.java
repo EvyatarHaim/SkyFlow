@@ -4,9 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.skyflow.controller.DatabaseController;
 import com.skyflow.controller.FlightController;
 import com.skyflow.controller.WeatherController;
+import com.skyflow.controller.DatabaseController;
 import com.skyflow.service.DatabaseService;
 import com.skyflow.model.Flight;
 import com.skyflow.model.Weather;
@@ -26,18 +26,20 @@ import java.util.Random;
 public class OpenSkyDataImport {
     private final FlightController flightController;
     private final WeatherController weatherController;
-    private final DatabaseService  databaseService;
     private final Random random = new Random();
     private final Gson gson = new Gson();
+    private DatabaseService databaseService;
 
     private static final String OPENSKY_API_URL = "https://opensky-network.org/api";
 
     // Constructor
-    public OpenSkyDataImport(FlightController flightController, WeatherController weatherController,
-                             DatabaseService databaseService) {
+    public OpenSkyDataImport(FlightController flightController, WeatherController weatherController) {
         this.flightController = flightController;
         this.weatherController = weatherController;
-        this.databaseService = databaseService;
+        // Get database service from FlightController
+        if (flightController != null) {
+            this.databaseService = flightController.getDatabaseService();
+        }
     }
 
     // Import flights from OpenSky API and enhance them with additional information
@@ -247,26 +249,25 @@ public class OpenSkyDataImport {
             icaoCode = callsign;
         }
 
-        System.out.println("Trying to find airline for code: " + icaoCode);
-
         // Try to find the airline in the database
-        if (databaseService != null) {
-            Map<String, String> airline = databaseService.getAirlineByCode(icaoCode);
+        Map<String, String> airline = databaseService.getAirlineByCode(icaoCode);
 
-            // For debugging
-            System.out.println("Database lookup result: " + (airline != null ? airline.toString() : "null"));
+        // If found in database, return the airline name
+        if (airline != null && airline.get("name") != null) {
+            return airline.get("name");
+        }
 
-            // If found in database, return the airline name
+        // If not found with 3 letters, try with 2 letters
+        if (callsign.length() >= 2) {
+            String shortCode = callsign.substring(0, 2);
+            airline = databaseService.getAirlineByCode(shortCode);
+
             if (airline != null && airline.get("name") != null) {
-                System.out.println("Found airline name: " + airline.get("name"));
                 return airline.get("name");
             }
-        } else {
-            System.out.println("Database service is null, cannot look up airline");
         }
 
         // If not found, return a default name
-        System.out.println("Using default airline name: " + icaoCode + " Airlines");
         return icaoCode + " Airlines";
     }
 
