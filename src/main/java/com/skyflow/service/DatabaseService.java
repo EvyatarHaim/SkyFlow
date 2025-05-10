@@ -72,7 +72,7 @@ public class DatabaseService {
         return null;
     }
 
-    // Get aircraft details by name
+    // Get aircraft details by name with caching
     public Map<String, Object> getAircraftByName(String name) {
         // Check cache first
         if (aircraftCache.containsKey(name)) {
@@ -102,6 +102,19 @@ public class DatabaseService {
     // Get all aircraft of a specific category
     public List<Map<String, Object>> getAircraftByCategory(Flight.WakeTurbulenceCategory category) {
         return databaseController.getAircraftByCategory(category);
+    }
+
+    // Get a random aircraft from a specific category
+    public Map<String, Object> getRandomAircraftByCategory(Flight.WakeTurbulenceCategory category) {
+        List<Map<String, Object>> aircraftList = getAircraftByCategory(category);
+
+        if (aircraftList != null && !aircraftList.isEmpty()) {
+            // Pick a random aircraft from the list
+            int randomIndex = random.nextInt(aircraftList.size());
+            return aircraftList.get(randomIndex);
+        }
+
+        return null;
     }
 
 }

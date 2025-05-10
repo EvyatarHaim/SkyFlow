@@ -114,14 +114,14 @@ public class OpenSkyDataImport {
             // Format callsign to look like a flight number
             String flightNumber = formatCallsign(callsign);
 
-            // Generate random airline based on callsign prefix
+            // Generate airline name from database
             String airline = generateAirlineName(callsign);
 
             // Generate random aircraft type
             String aircraftType = generateAircraftType();
 
-            // Random wake turbulence category (weighted toward MEDIUM)
-            Flight.WakeTurbulenceCategory category = generateRandomCategory();
+            // Determine wake turbulence category using database
+            Flight.WakeTurbulenceCategory category = determineTurbulenceCategory(aircraftType);
 
             // Random flight type (arrival or departure)
             Flight.FlightType flightType = random.nextBoolean() ?
@@ -376,5 +376,68 @@ public class OpenSkyDataImport {
         reader.close();
 
         return response.toString();
+    }
+
+    // Determine wake turbulence category based on aircraft type
+    private Flight.WakeTurbulenceCategory determineTurbulenceCategory(String aircraftType) {
+        // Try to find aircraft in database
+        Map<String, Object> aircraft = databaseService.getAircraftByName(aircraftType);
+
+        if (aircraft != null && aircraft.get("turbulence_category") != null) {
+            String categoryString = (String) aircraft.get("turbulence_category");
+            try {
+                // Convert string to enum
+                return Flight.WakeTurbulenceCategory.valueOf(categoryString);
+            } catch (IllegalArgumentException e) {
+                // Fallback if category string isn't a valid enum value
+                System.err.println("Invalid turbulence category in database: " + categoryString);
+            }
+        }
+
+        // If not found in database, assign based on aircraft naming patterns
+//        if (aircraftType != null) {
+//            // Look for keywords in the aircraft type name
+//            String upperType = aircraftType.toUpperCase();
+//
+//            // Large aircraft typically classified as HEAVY
+//            if (upperType.contains("777") ||
+//                    upperType.contains("747") ||
+//                    upperType.contains("787") ||
+//                    upperType.contains("A330") ||
+//                    upperType.contains("A340") ||
+//                    upperType.contains("A350")) {
+//                return Flight.WakeTurbulenceCategory.HEAVY;
+//            }
+//
+//            // Super aircraft classification
+//            if (upperType.contains("A380") ||
+//                    upperType.contains("AN225")) {
+//                return Flight.WakeTurbulenceCategory.SUPER;
+//            }
+//
+//            // Small aircraft typically classified as LIGHT
+//            if (upperType.contains("CESSNA") ||
+//                    upperType.contains("BEECH") ||
+//                    upperType.contains("CRJ1") ||
+//                    upperType.contains("ERJ-1")) {
+//                return Flight.WakeTurbulenceCategory.LIGHT;
+//            }
+//
+//            // Most common commercial aircraft are MEDIUM by default
+//            return Flight.WakeTurbulenceCategory.MEDIUM;
+//        }
+
+        // Random assignment
+        int rand = random.nextInt(100);
+
+        if (rand < 10) {
+            return Flight.WakeTurbulenceCategory.LIGHT;
+        } else if (rand < 70) {
+            return Flight.WakeTurbulenceCategory.MEDIUM;
+        } else if (rand < 95) {
+            return Flight.WakeTurbulenceCategory.HEAVY;
+        } else {
+            return Flight.WakeTurbulenceCategory.SUPER;
+        }
     }
 }

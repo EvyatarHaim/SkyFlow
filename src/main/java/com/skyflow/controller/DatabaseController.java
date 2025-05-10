@@ -118,17 +118,16 @@ public class DatabaseController {
                 Map<String, Object> aircraft = new HashMap<>();
                 aircraft.put("id", resultSet.getInt("id"));
                 aircraft.put("name", resultSet.getString("name"));
-                aircraft.put("fuelCapacity", resultSet.getInt("fuel_capacity"));
+                aircraft.put("fuel_capacity", resultSet.getInt("fuel_capacity"));
                 aircraft.put("weight", resultSet.getInt("weight"));
-                aircraft.put("aircraftType", resultSet.getString("aircraft_type"));
-                aircraft.put("turbulenceCategory", resultSet.getString("turbulence_category"));
+                aircraft.put("aircraft_type", resultSet.getString("aircraft_type"));
+                aircraft.put("turbulence_category", resultSet.getString("turbulence_category"));
                 return aircraft;
             }
 
             resultSet.close();
         } catch (SQLException e) {
             System.err.println("Error retrieving aircraft by name: " + e.getMessage());
-            e.printStackTrace();
         }
 
         return null;
@@ -195,17 +194,16 @@ public class DatabaseController {
                 Map<String, Object> aircraftDetails = new HashMap<>();
                 aircraftDetails.put("id", resultSet.getInt("id"));
                 aircraftDetails.put("name", resultSet.getString("name"));
-                aircraftDetails.put("fuelCapacity", resultSet.getInt("fuel_capacity"));
+                aircraftDetails.put("fuel_capacity", resultSet.getInt("fuel_capacity"));
                 aircraftDetails.put("weight", resultSet.getInt("weight"));
-                aircraftDetails.put("aircraftType", resultSet.getString("aircraft_type"));
-                aircraftDetails.put("turbulenceCategory", resultSet.getString("turbulence_category"));
+                aircraftDetails.put("aircraft_type", resultSet.getString("aircraft_type"));
+                aircraftDetails.put("turbulence_category", resultSet.getString("turbulence_category"));
                 aircraft.add(aircraftDetails);
             }
 
             resultSet.close();
         } catch (SQLException e) {
             System.err.println("Error retrieving aircraft by category: " + e.getMessage());
-            e.printStackTrace();
         }
 
         return aircraft;
