@@ -118,7 +118,7 @@ public class ATCViewController implements Initializable {
         updateTimeline.setCycleCount(Animation.INDEFINITE);
 
         // Initialize OpenSky importer
-        openSkyImporter = new OpenSkyDataImport(flightController, weatherController);
+        openSkyImporter = new OpenSkyDataImport(flightController, weatherController, databaseService);
     }
 
     // Initialize method called after FXML is loaded

@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.skyflow.controller.DatabaseController;
 import com.skyflow.controller.FlightController;
 import com.skyflow.controller.WeatherController;
+import com.skyflow.service.DatabaseService;
 import com.skyflow.model.Flight;
 import com.skyflow.model.Weather;
 
@@ -25,14 +26,15 @@ import java.util.Random;
 public class OpenSkyDataImport {
     private final FlightController flightController;
     private final WeatherController weatherController;
-    DatabaseController databaseService;
+    private final DatabaseService  databaseService;
     private final Random random = new Random();
     private final Gson gson = new Gson();
 
     private static final String OPENSKY_API_URL = "https://opensky-network.org/api";
 
     // Constructor
-    public OpenSkyDataImport(FlightController flightController, WeatherController weatherController) {
+    public OpenSkyDataImport(FlightController flightController, WeatherController weatherController,
+                             DatabaseService databaseService) {
         this.flightController = flightController;
         this.weatherController = weatherController;
         this.databaseService = databaseService;
@@ -245,17 +247,29 @@ public class OpenSkyDataImport {
             icaoCode = callsign;
         }
 
-        // Try to find the airline in the database
-        Map<String, String> airline = databaseService.getAirlineByCode(icaoCode);
+        System.out.println("Trying to find airline for code: " + icaoCode);
 
-        // If found in database, return the airline name
-        if (airline != null && airline.get("name") != null) {
-            return airline.get("name");
+        // Try to find the airline in the database
+        if (databaseService != null) {
+            Map<String, String> airline = databaseService.getAirlineByCode(icaoCode);
+
+            // For debugging
+            System.out.println("Database lookup result: " + (airline != null ? airline.toString() : "null"));
+
+            // If found in database, return the airline name
+            if (airline != null && airline.get("name") != null) {
+                System.out.println("Found airline name: " + airline.get("name"));
+                return airline.get("name");
+            }
+        } else {
+            System.out.println("Database service is null, cannot look up airline");
         }
 
         // If not found, return a default name
+        System.out.println("Using default airline name: " + icaoCode + " Airlines");
         return icaoCode + " Airlines";
     }
+
     private String generateAircraftType() {
         String[] commonAircraft = {
                 "Boeing 737-800",
