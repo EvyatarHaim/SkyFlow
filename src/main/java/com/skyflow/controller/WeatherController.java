@@ -1,14 +1,21 @@
 package com.skyflow.controller;
 
 import com.skyflow.model.Weather;
+import com.skyflow.service.DatabaseService;
+
+import java.util.List;
+import java.util.Map;
+
 
 public class WeatherController {
     private Weather currentWeather;
     private SchedulingController schedulingController;
+    private DatabaseService databaseService;
 
-    // Constructor
-    public WeatherController(SchedulingController schedulingController) {
+    // Constructor with database service
+    public WeatherController(SchedulingController schedulingController, DatabaseService databaseService) {
         this.schedulingController = schedulingController;
+        this.databaseService = databaseService;
 
         // Initialize with default weather
         this.currentWeather = new Weather(
@@ -16,6 +23,25 @@ public class WeatherController {
 
         // Update scheduling controller with default weather
         schedulingController.updateWeather(currentWeather);
+    }
+
+    // Load weather preset from database
+    public void loadWeatherPreset(String presetName) {
+        Map<String, Object> preset = databaseService.getWeatherPresetByName(presetName);
+
+        if (preset != null) {
+            double windSpeed = (double) preset.get("windSpeed");
+            int windDirection = (int) preset.get("windDirection");
+            double visibility = (double) preset.get("visibility");
+            Weather.WeatherCondition condition = Weather.WeatherCondition.valueOf((String) preset.get("condition"));
+
+            updateWeather(windSpeed, windDirection, visibility, condition);
+        }
+    }
+
+    // Get all weather presets from database
+    public List<Map<String, Object>> getAllWeatherPresets() {
+        return databaseService.getAllWeatherPresets();
     }
 
     // Update weather conditions
@@ -28,17 +54,6 @@ public class WeatherController {
         schedulingController.updateWeather(newWeather);
 
         // Trigger rescheduling as weather conditions changed
-        schedulingController.scheduleFlights();
-    }
-
-    // Update specific aspects of weather
-    public void updateWindSpeed(double windSpeed) {
-        currentWeather.setWindSpeed(windSpeed);
-
-        // Update in scheduling controller
-        schedulingController.updateWeather(currentWeather);
-
-        // Trigger rescheduling
         schedulingController.scheduleFlights();
     }
 

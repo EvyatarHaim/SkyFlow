@@ -159,17 +159,22 @@
                     </padding>
 
                     <GridPane hgap="15" vgap="15" maxWidth="500">
-                        <Label text="Wind Speed (km/h):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                        <TextField fx:id="txtWindSpeed" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Weather Preset:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <ComboBox fx:id="cboWeatherPreset" GridPane.rowIndex="0" GridPane.columnIndex="1" maxWidth="Infinity"/>
 
-                        <Label text="Wind Direction (degrees):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                        <TextField fx:id="txtWindDirection" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Separator GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.fillWidth="true"/>
 
-                        <Label text="Visibility (km):" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                        <TextField fx:id="txtVisibility" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label text="Wind Speed (km/h):" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtWindSpeed" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                        <Label text="Weather Condition:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                        <ComboBox fx:id="cboWeatherCondition" GridPane.rowIndex="3" GridPane.columnIndex="1" maxWidth="Infinity"/>
+                        <Label text="Wind Direction (degrees):" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtWindDirection" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                        <Label text="Visibility (km):" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtVisibility" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                        <Label text="Weather Condition:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                        <ComboBox fx:id="cboWeatherCondition" GridPane.rowIndex="5" GridPane.columnIndex="1" maxWidth="Infinity"/>
                     </GridPane>
 
                     <Button text="Update Weather" onAction="#handleUpdateWeather" prefWidth="200"/>

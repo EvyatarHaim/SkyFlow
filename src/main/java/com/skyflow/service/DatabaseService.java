@@ -117,4 +117,12 @@ public class DatabaseService {
         return null;
     }
 
+    public List<Map<String, Object>> getAllWeatherPresets() {
+        return databaseController.getAllWeatherPresets();
+    }
+
+    public Map<String, Object> getWeatherPresetByName(String name) {
+        return databaseController.getWeatherPresetByName(name);
+    }
+
 }

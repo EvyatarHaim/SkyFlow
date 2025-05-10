@@ -23,6 +23,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class ATCViewController implements Initializable {
@@ -41,6 +42,9 @@ public class ATCViewController implements Initializable {
     private Timeline updateTimeline;
 
     private OpenSkyDataImport openSkyImporter;
+
+    private boolean isCustomWeatherMode = true;
+
 
     // FXML UI Components - Flights Table
     @FXML private TableView<Flight> flightsTable;
@@ -83,6 +87,8 @@ public class ATCViewController implements Initializable {
     @FXML private TextField txtWindDirection;
     @FXML private TextField txtVisibility;
     @FXML private ComboBox<Weather.WeatherCondition> cboWeatherCondition;
+    @FXML private ComboBox<String> cboWeatherPreset;
+
 
     // FXML UI Components - Status
     @FXML private Label lblStatus;
@@ -108,8 +114,9 @@ public class ATCViewController implements Initializable {
         // Pass database service to FlightController
         flightController = new FlightController(schedulingController, databaseService);
 
+        // Update this line to pass databaseService to WeatherController
         runwayController = new RunwayController(schedulingController);
-        weatherController = new WeatherController(schedulingController);
+        weatherController = new WeatherController(schedulingController, databaseService); // Pass databaseService here
 
         // Create update timeline for simulation
         updateTimeline = new Timeline(
@@ -119,6 +126,12 @@ public class ATCViewController implements Initializable {
 
         // Initialize OpenSky importer
         openSkyImporter = new OpenSkyDataImport(flightController, weatherController);
+
+        // Create update timeline for simulation
+        updateTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(1), event -> updateSimulation())
+        );
+        updateTimeline.setCycleCount(Animation.INDEFINITE);
     }
 
 
@@ -209,14 +222,53 @@ public class ATCViewController implements Initializable {
             System.err.println("Database initialization error: " + e.getMessage());
         }
 
+        // Initialize weather presets
+        initializeWeatherPresets();
+
+        // Set up weather input listeners
+        setupWeatherInputListeners();
+
         // Load data
         refreshData();
 
         // Start update timeline
         updateTimeline.play();
 
+    }
 
+    private void setupWeatherInputListeners() {
+        // When user starts editing any weather field, set custom mode
+        txtWindSpeed.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) { // When focus gained
+                if (!cboWeatherPreset.getValue().equals("Custom")) {
+                    cboWeatherPreset.setValue("Custom");
+                }
+            }
+        });
 
+        txtWindDirection.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                if (!cboWeatherPreset.getValue().equals("Custom")) {
+                    cboWeatherPreset.setValue("Custom");
+                }
+            }
+        });
+
+        txtVisibility.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                if (!cboWeatherPreset.getValue().equals("Custom")) {
+                    cboWeatherPreset.setValue("Custom");
+                }
+            }
+        });
+
+        cboWeatherCondition.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                if (!cboWeatherPreset.getValue().equals("Custom")) {
+                    cboWeatherPreset.setValue("Custom");
+                }
+            }
+        });
     }
 
     // Refresh all data from controllers
@@ -244,18 +296,20 @@ public class ATCViewController implements Initializable {
         runwaysData.clear();
         runwaysData.addAll(runwayController.getAllRunways());
 
-        // Update weather display
+        // Update weather display label (but not the input fields when in custom mode)
         Weather weather = weatherController.getCurrentWeather();
         lblWeatherStatus.setText(String.format(
                 "Wind: %.1f km/h at %d° - Visibility: %.1f km - Condition: %s",
                 weather.getWindSpeed(), weather.getWindDirection(),
                 weather.getVisibility(), weather.getCondition().name()));
 
-        // Update weather form
-        txtWindSpeed.setText(String.valueOf(weather.getWindSpeed()));
-        txtWindDirection.setText(String.valueOf(weather.getWindDirection()));
-        txtVisibility.setText(String.valueOf(weather.getVisibility()));
-        cboWeatherCondition.setValue(weather.getCondition());
+        // Only update the weather form fields if we're NOT in custom mode
+        if (!isCustomWeatherMode) {
+            txtWindSpeed.setText(String.valueOf(weather.getWindSpeed()));
+            txtWindDirection.setText(String.valueOf(weather.getWindDirection()));
+            txtVisibility.setText(String.valueOf(weather.getVisibility()));
+            cboWeatherCondition.setValue(weather.getCondition());
+        }
     }
 
     // Update simulation
@@ -372,6 +426,76 @@ public class ATCViewController implements Initializable {
         }
     }
 
+    // Initialize weather presets combo box in the initialize method
+    private void initializeWeatherPresets() {
+        // Get weather presets from database
+        List<Map<String, Object>> presets = weatherController.getAllWeatherPresets();
+        List<String> presetNames = new ArrayList<>();
+
+        // Add preset names to the list
+        for (Map<String, Object> preset : presets) {
+            presetNames.add((String) preset.get("name"));
+        }
+
+        // Add custom option
+        presetNames.add("Custom");
+
+        // Set items in the combo box
+        cboWeatherPreset.setItems(FXCollections.observableArrayList(presetNames));
+        cboWeatherPreset.setValue("Custom"); // Default to custom
+
+        // Add listener for selection changes
+        cboWeatherPreset.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                if (newVal.equals("Custom")) {
+                    // Enable all fields for editing
+                    enableWeatherInputFields(true);
+                    // Set custom mode flag
+                    isCustomWeatherMode = true;
+                    // Don't clear fields - allow user to keep editing
+                } else {
+                    // Load preset from database
+                    weatherController.loadWeatherPreset(newVal);
+
+                    // Update UI fields
+                    Weather weather = weatherController.getCurrentWeather();
+                    txtWindSpeed.setText(String.valueOf(weather.getWindSpeed()));
+                    txtWindDirection.setText(String.valueOf(weather.getWindDirection()));
+                    txtVisibility.setText(String.valueOf(weather.getVisibility()));
+                    cboWeatherCondition.setValue(weather.getCondition());
+
+                    // Make fields read-only when using a preset
+                    enableWeatherInputFields(false);
+
+                    // Set custom mode flag
+                    isCustomWeatherMode = false;
+                }
+            }
+        });
+    }
+
+    // Helper method to enable/disable weather input fields
+    private void enableWeatherInputFields(boolean enabled) {
+        txtWindSpeed.setEditable(enabled);
+        txtWindDirection.setEditable(enabled);
+        txtVisibility.setEditable(enabled);
+        cboWeatherCondition.setDisable(!enabled);
+
+        // Apply visual styling based on editable state
+        String style = enabled ? "-fx-opacity: 1.0;" : "-fx-opacity: 0.8;";
+        txtWindSpeed.setStyle(style);
+        txtWindDirection.setStyle(style);
+        txtVisibility.setStyle(style);
+    }
+
+    // Helper method to clear weather input fields
+    private void clearWeatherInputFields() {
+        txtWindSpeed.clear();
+        txtWindDirection.clear();
+        txtVisibility.clear();
+        cboWeatherCondition.setValue(Weather.WeatherCondition.SUNNY); // Default value
+    }
+
     // Add new runway button handler
     @FXML
     private void handleAddRunway() {
@@ -473,13 +597,10 @@ public class ATCViewController implements Initializable {
                 return;
             }
 
-            // Update weather
+            // Update weather in the controller
             weatherController.updateWeather(
                     windSpeed, windDirection, visibility, cboWeatherCondition.getValue()
             );
-
-            // Refresh data
-            refreshData();
 
             // Show success message
             lblStatus.setText("Weather updated successfully.");

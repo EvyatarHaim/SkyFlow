@@ -20,6 +20,7 @@ public class DatabaseController {
 
             // Create tables if they don't exist
             createTablesIfNotExist();
+            createWeatherPresetsTable();
 
             System.out.println("Database connection established successfully.");
         } catch (SQLException e) {
@@ -248,5 +249,114 @@ public class DatabaseController {
             System.err.println("[:] Closing database connection: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+
+    // Methods for managing weather presets in the database
+    public void createWeatherPresetsTable() {
+        try (Statement statement = connection.createStatement()) {
+            // Create Weather Presets table
+            statement.execute(
+                    "CREATE TABLE IF NOT EXISTS weather_presets (" +
+                            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            "name TEXT NOT NULL UNIQUE, " +
+                            "wind_speed REAL NOT NULL, " +
+                            "wind_direction INTEGER NOT NULL, " +
+                            "visibility REAL NOT NULL, " +
+                            "condition TEXT NOT NULL" +
+                            ")"
+            );
+
+            // Check if table is empty and populate with default presets
+            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM weather_presets");
+            if (resultSet.next() && resultSet.getInt(1) == 0) {
+                populateDefaultWeatherPresets();
+            }
+            resultSet.close();
+
+            System.out.println("Weather presets table initialized successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error creating weather presets table: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Populate default weather presets
+    private void populateDefaultWeatherPresets() {
+        try (Statement statement = connection.createStatement()) {
+            // Insert default weather presets
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Clear Day', 5.0, 90, 25.0, 'SUNNY')");
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Light Breeze', 10.0, 180, 20.0, 'SUNNY')");
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Cloudy Morning', 7.5, 270, 15.0, 'CLOUDY')");
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Rainy Afternoon', 12.0, 45, 8.0, 'RAINY')");
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Heavy Fog', 3.0, 135, 2.5, 'FOGGY')");
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Winter Storm', 15.0, 315, 5.0, 'SNOWY')");
+            statement.execute("INSERT INTO weather_presets (name, wind_speed, wind_direction, visibility, condition) " +
+                    "VALUES ('Summer Storm', 25.0, 225, 4.0, 'THUNDERSTORM')");
+
+            System.out.println("Default weather presets added successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error populating weather presets: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // Get all weather presets from the database
+    public List<Map<String, Object>> getAllWeatherPresets() {
+        List<Map<String, Object>> presets = new ArrayList<>();
+
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT * FROM weather_presets ORDER BY name")) {
+
+            while (resultSet.next()) {
+                Map<String, Object> preset = new HashMap<>();
+                preset.put("id", resultSet.getInt("id"));
+                preset.put("name", resultSet.getString("name"));
+                preset.put("windSpeed", resultSet.getDouble("wind_speed"));
+                preset.put("windDirection", resultSet.getInt("wind_direction"));
+                preset.put("visibility", resultSet.getDouble("visibility"));
+                preset.put("condition", resultSet.getString("condition"));
+                presets.add(preset);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving weather presets: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return presets;
+    }
+
+    // Get weather preset by name
+    public Map<String, Object> getWeatherPresetByName(String name) {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT * FROM weather_presets WHERE name = ?")) {
+
+            statement.setString(1, name);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                Map<String, Object> preset = new HashMap<>();
+                preset.put("id", resultSet.getInt("id"));
+                preset.put("name", resultSet.getString("name"));
+                preset.put("windSpeed", resultSet.getDouble("wind_speed"));
+                preset.put("windDirection", resultSet.getInt("wind_direction"));
+                preset.put("visibility", resultSet.getDouble("visibility"));
+                preset.put("condition", resultSet.getString("condition"));
+                return preset;
+            }
+
+            resultSet.close();
+        } catch (SQLException e) {
+            System.err.println("Error retrieving weather preset by name: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }
